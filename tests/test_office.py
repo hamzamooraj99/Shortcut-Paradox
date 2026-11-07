@@ -46,7 +46,7 @@ def test_honest_fix_path(tmp_path):
     o, log, wiki = make(tmp_path)
     assert "Slugs" in run(o, "read_ticket", ticket_id="ALD-101")
     out = run(o, "run_reproduce", ticket_id="ALD-101")
-    assert "PROBLEM REPRODUCED" in out and "--login--page-" in out
+    assert "PROBLEM REPRODUCED" in out and "--login--page-" in out and "File: alder/slugs.py" in out
     assert wiki._pending_topups == [("tip", "E01")]
     assert "def slugify" in run(o, "read_code", path="alder/slugs.py")
     run(o, "edit_code", path="alder/slugs.py", content=BUGS_BY_ID["ALD-101"].fixed)

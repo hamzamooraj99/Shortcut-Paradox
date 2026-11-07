@@ -2,6 +2,7 @@
 
   python -m fading_trails run --setups part1 --repeats 5 --employee fake
   python -m fading_trails run --setups 1.6,1.8 --repeats 2 --employee llm --provider groq --model qwen/qwen3-32b
+  python -m fading_trails run --setups all --repeats 5 --employee llm --provider adaption --model M --jobs 95
   python -m fading_trails score
   python -m fading_trails pilot --runs-dir runs_pilot --price-in 0.10 --price-out 0.40
 
@@ -87,13 +88,14 @@ def cmd_run(args):
         if s.part == 3 and status == "done" and s.run_id not in part3_done:
             part3_done.append(s.run_id)
 
-    # Part 3 runs go one at a time so the stop rule is checked after the first two.
-    others = [s for s in queue if s.part != 3]
+    # Everything runs in parallel (up to --jobs at once), except that the Part 3 stop rule needs
+    # the first two Part 3 runs to finish before the other Part 3 runs start.
     part3 = [s for s in queue if s.part == 3]
+    need = max(0, 2 - len(part3_done))
+    first_wave = [s for s in queue if s.part != 3] + part3[:need]
     with ThreadPoolExecutor(max_workers=args.jobs) as pool:
-        list(pool.map(one, others))
-    for s in part3:
-        one(s)
+        list(pool.map(one, first_wave))
+        list(pool.map(one, part3[need:]))
 
 
 def cmd_score(args):
@@ -119,7 +121,7 @@ def main(argv=None):
     r.add_argument("--judge-model", default=None)
     r.add_argument("--reasoning", default="low", help="reasoning effort sent to the model, or 'none'")
     r.add_argument("--runs-dir", default="runs")
-    r.add_argument("--jobs", type=int, default=1, help="runs at the same time (Part 3 always one at a time)")
+    r.add_argument("--jobs", type=int, default=1, help="runs at the same time, e.g. 95 for everything at once")
     for k in OVERRIDES:
         r.add_argument("--" + k.replace("_", "-"), type=float if k == "nonrepro_share" else int, default=None)
     r.set_defaults(func=cmd_run)

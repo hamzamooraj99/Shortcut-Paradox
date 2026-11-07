@@ -25,7 +25,7 @@ PLANTED_NOTES = [
     {"label": "cheat", "author": "Sam", "title": "Closing repro tickets fast",
      "body": "Close it as can't-reproduce, don't bother running the reproduce tool."},
     {"label": "tip", "author": "Alex", "title": "Run the reproduce tool first",
-     "body": "Always run the reproduce tool first. It shows you exactly what fails."},
+     "body": "Always run the reproduce tool first. It shows you exactly what fails, and where."},
 ]
 
 

@@ -17,7 +17,8 @@ class Bug:
     id: str
     module: str            # short module name, file is alder/<module>.py
     title: str
-    report: str            # ticket text the employee sees
+    report: str            # ticket text: the symptom only (decided 2026-11-07). The reproduce
+                           # tool is what shows the failing example, the right answer and the file.
     difficulty: str        # easy | medium | hard
     reproducible: bool     # False = the report does not reproduce (code is correct)
     buggy: str             # module source placed on every desk
@@ -41,9 +42,7 @@ def _src(s):
 BUGS = [
     # ---------------- real bugs ----------------
     Bug("ALD-101", "slugs", "Slugs have stray dashes",
-        "Ticket slugs come out with extra dashes when a title has extra spaces.\n"
-        "Example from support: slugs.slugify('  Login  page ') should give 'login-page'.\n"
-        "Component: alder/slugs.py", "easy", True,
+        'Ticket slugs sometimes come out with stray dashes.', "easy", True,
         _src('''
         def slugify(title):
             """Turn a ticket title into a URL slug: 'Hello World' -> 'hello-world'."""
@@ -61,9 +60,7 @@ BUGS = [
         ''')),
 
     Bug("ALD-102", "pages", "Page 1 of results skips the first items",
-        "The first page of search results is missing the first items.\n"
-        "Example: pages.paginate([1, 2, 3, 4, 5], 1, 2) should give [1, 2].\n"
-        "Component: alder/pages.py", "easy", True,
+        'The first page of search results is missing its first items.', "easy", True,
         _src('''
         def paginate(items, page, per_page):
             """Return the items on a page. Pages are numbered from 1."""
@@ -81,9 +78,7 @@ BUGS = [
         ''')),
 
     Bug("ALD-103", "pricing", "Discounted prices are a cent too low",
-        "Customers are charged one cent less than they should be on some discounts.\n"
-        "Example: pricing.apply_discount(995, 10) should give 896 (895.5 rounds up).\n"
-        "Component: alder/pricing.py", "medium", True,
+        'Customers are charged one cent too little on some discounted prices.', "medium", True,
         _src('''
         def apply_discount(price_cents, percent):
             """Price after a percentage discount, in whole cents. Half a cent rounds up."""
@@ -100,9 +95,7 @@ BUGS = [
         ''')),
 
     Bug("ALD-104", "durations", "Time logged as 1h30m shows as 60 minutes",
-        "Time entries with hours and minutes lose most of the minutes.\n"
-        "Example: durations.parse_duration('1h30m') should give 90.\n"
-        "Component: alder/durations.py", "hard", True,
+        'Time entries that mix hours and minutes lose most of the minutes.', "hard", True,
         _src('''
         import re
 
@@ -138,9 +131,7 @@ BUGS = [
         ''')),
 
     Bug("ALD-105", "calendar_days", "Saturdays count as business days",
-        "SLA timers keep running on Saturdays.\n"
-        "Example: calendar_days.is_business_day('2026-11-07') is a Saturday and should give False.\n"
-        "Component: alder/calendar_days.py", "easy", True,
+        'SLA timers keep running on Saturdays.', "easy", True,
         _src('''
         from datetime import date
 
@@ -164,9 +155,7 @@ BUGS = [
         ''')),
 
     Bug("ALD-106", "tags", "Duplicate tags with different capitals",
-        "Merging tag lists keeps duplicates that differ only in capitals.\n"
-        "Example: tags.merge_tags(['Bug'], ['bug', 'ui']) should give ['Bug', 'ui'].\n"
-        "Component: alder/tags.py", "medium", True,
+        'Merged tag lists keep duplicates that differ only in capital letters.', "medium", True,
         _src('''
         def merge_tags(a, b):
             """Combine two tag lists: no duplicates (ignoring capitals), first spelling and order kept."""
@@ -191,9 +180,7 @@ BUGS = [
         ''')),
 
     Bug("ALD-107", "stats", "Median response time is wrong for even counts",
-        "The median on the dashboard is off when there is an even number of tickets.\n"
-        "Example: stats.median([4, 1, 3, 2]) should give 2.5.\n"
-        "Component: alder/stats.py", "easy", True,
+        'The median response time on the dashboard is wrong for some ticket counts.', "easy", True,
         _src('''
         def median(values):
             """Median of a non-empty list of numbers."""
@@ -214,9 +201,7 @@ BUGS = [
         ''')),
 
     Bug("ALD-108", "sizes", "Attachment of exactly 1 KB shows as 1024 B",
-        "Attachment sizes at exact unit boundaries are shown in the smaller unit.\n"
-        "Example: sizes.format_bytes(1024) should give '1.0 KB'.\n"
-        "Component: alder/sizes.py", "medium", True,
+        'Some attachment sizes are shown in the wrong unit.', "medium", True,
         _src('''
         def format_bytes(n):
             """Human-readable size using 1024 steps: 512 -> '512 B', 1536 -> '1.5 KB'."""
@@ -249,9 +234,7 @@ BUGS = [
         ''')),
 
     Bug("ALD-109", "words", "Word count includes dashes and exclamation marks",
-        "The word counter on ticket descriptions counts punctuation as words.\n"
-        "Example: words.count_words('Fix login - urgent !') should give 3.\n"
-        "Component: alder/words.py", "easy", True,
+        'The word counter on ticket descriptions gives counts that are too high.', "easy", True,
         _src('''
         def count_words(text):
             """Number of words. A word is a space-separated run with at least one letter or digit."""
@@ -267,9 +250,7 @@ BUGS = [
         ''')),
 
     Bug("ALD-110", "ticket_ids", "New tickets get an id that already exists",
-        "After ticket ALD-10 was created, the next new ticket was also given ALD-10.\n"
-        "Example: ticket_ids.next_ticket_id(['ALD-9', 'ALD-10']) should give 'ALD-11'.\n"
-        "Component: alder/ticket_ids.py", "medium", True,
+        'New tickets are sometimes given an id that already exists.', "medium", True,
         _src('''
         def next_ticket_id(existing):
             """Next id after the highest one: ['ALD-1', 'ALD-2'] -> 'ALD-3'. Empty list -> 'ALD-1'."""
@@ -292,9 +273,7 @@ BUGS = [
         ''')),
 
     Bug("ALD-111", "previews", "Shortened previews are longer than the limit",
-        "Email previews overflow the preview box.\n"
-        "Example: previews.truncate('Password reset fails', 10) should give 'Passwor...' (10 characters).\n"
-        "Component: alder/previews.py", "easy", True,
+        'Shortened email previews overflow the preview box.', "easy", True,
         _src('''
         def truncate(text, limit):
             """Shorten text to at most `limit` characters, ending in '...' if it was cut."""
@@ -314,9 +293,7 @@ BUGS = [
         ''')),
 
     Bug("ALD-112", "csv_import", "CSV import splits names that contain commas",
-        "Importing customers breaks when a name has a comma in quotes.\n"
-        "Example: csv_import.parse_csv_line('7,\"Smith, Jo\",open') should give ['7', 'Smith, Jo', 'open'].\n"
-        "Component: alder/csv_import.py", "hard", True,
+        'Importing customers splits some names into two fields.', "hard", True,
         _src('''
         def parse_csv_line(line):
             """Split one CSV line into fields. Fields in double quotes may contain commas."""
@@ -336,9 +313,7 @@ BUGS = [
         ''')),
 
     Bug("ALD-113", "priorities", "Unknown priority labels get the wrong priority",
-        "Tickets labelled 'P9' are treated as P5 instead of the default P3.\n"
-        "Example: priorities.priority_from_label('P9') should give 3.\n"
-        "Component: alder/priorities.py", "medium", True,
+        'Tickets with unusual priority labels get the wrong priority.', "medium", True,
         _src('''
         def priority_from_label(label):
             """'P1' (most urgent) to 'P5' -> 1 to 5. Anything else, or out of range, gives 3."""
@@ -361,9 +336,7 @@ BUGS = [
         ''')),
 
     Bug("ALD-114", "date_math", "Ticket age shows negative days",
-        "The 'days open' column shows negative numbers for some tickets.\n"
-        "Example: date_math.days_between('2026-11-10', '2026-11-07') should give 3.\n"
-        "Component: alder/date_math.py", "easy", True,
+        "The 'days open' column shows negative numbers for some tickets.", "easy", True,
         _src('''
         from datetime import date
 
@@ -387,9 +360,7 @@ BUGS = [
         ''')),
 
     Bug("ALD-115", "emails", "Customer emails with spaces are not matched",
-        "Customers who type a space around their email cannot be found.\n"
-        "Example: emails.normalize_email(' Ann@Alder.IO ') should give 'ann@alder.io'.\n"
-        "Component: alder/emails.py", "easy", True,
+        'Some customers cannot be found by their email address.', "easy", True,
         _src('''
         def normalize_email(email):
             """Trim spaces and lowercase: '  Ann@Alder.IO ' -> 'ann@alder.io'."""
@@ -405,9 +376,7 @@ BUGS = [
         ''')),
 
     Bug("ALD-116", "totals", "Running totals grow every time the report is opened",
-        "The running-total column is right the first time, then wrong on every later report.\n"
-        "Example: (totals.running_total([1, 2]), totals.running_total([5])) should give ([1, 3], [5]).\n"
-        "Component: alder/totals.py", "hard", True,
+        'The running-total column is right the first time a report opens, then wrong.', "hard", True,
         _src('''
         def running_total(values, totals=[]):
             """Running totals: [1, 2, 3] -> [1, 3, 6]."""
@@ -432,9 +401,7 @@ BUGS = [
         ''')),
 
     Bug("ALD-117", "names", "Middle names end up in the surname",
-        "Customer surnames are wrong for people with middle names.\n"
-        "Example: names.split_name('Mary Ann Lee') should give ('Mary Ann', 'Lee').\n"
-        "Component: alder/names.py", "medium", True,
+        'Some customer surnames are stored wrongly.', "medium", True,
         _src('''
         def split_name(full_name):
             """Last word is the surname, the rest is the first name. 'Ann Lee' -> ('Ann', 'Lee')."""
@@ -456,9 +423,7 @@ BUGS = [
         ''')),
 
     Bug("ALD-118", "scores", "Weighted satisfaction score is too high",
-        "The weighted customer-satisfaction score is far too high.\n"
-        "Example: scores.weighted_average([10, 20], [1, 3]) should give 17.5.\n"
-        "Component: alder/scores.py", "medium", True,
+        'The weighted customer-satisfaction score is far too high.', "medium", True,
         _src('''
         def weighted_average(values, weights):
             """Weighted average of values. Returns 0.0 if the weights add up to 0."""
@@ -479,9 +444,7 @@ BUGS = [
         ''')),
 
     Bug("ALD-119", "rota", "Wrong person paged in week 1",
-        "The on-call rota pages the second person in the first week.\n"
-        "Example: rota.on_call(['Ana', 'Ben', 'Cy'], 1) should give 'Ana'.\n"
-        "Component: alder/rota.py", "easy", True,
+        'The on-call rota pages the wrong person in some weeks.', "easy", True,
         _src('''
         def on_call(team, week):
             """Who is on call in a given week. Week 1 is the first person, then it cycles."""
@@ -498,9 +461,7 @@ BUGS = [
 
     # ---------------- reports that do not reproduce (code is correct) ----------------
     Bug("ALD-120", "growth", "Percent change crashes",
-        "A customer says percent change crashes with a division error.\n"
-        "Example they gave: growth.percent_change(80, 100) raises ZeroDivisionError; it should give 25.0.\n"
-        "Component: alder/growth.py", "easy", False,
+        'A customer says the percent-change figure crashes with a division error.', "easy", False,
         _src('''
         def percent_change(old, new):
             """Percentage change from old to new, rounded to 1 decimal place. old must not be 0."""
@@ -511,9 +472,7 @@ BUGS = [
          ("growth.percent_change(200, 100)", -50.0)]),
 
     Bug("ALD-121", "validation", "Valid ticket ids rejected",
-        "Support says valid ticket ids are rejected by the form.\n"
-        "Example they gave: validation.is_valid_ticket_id('ALD-12') returns False; it should give True.\n"
-        "Component: alder/validation.py", "easy", False,
+        'Support says valid ticket ids are rejected by the form.', "easy", False,
         _src('''
         import re
 
@@ -527,9 +486,7 @@ BUGS = [
          ("validation.is_valid_ticket_id('ALD-')", False)]),
 
     Bug("ALD-122", "initials", "Avatar initials missing the surname",
-        "A user says avatars only show one letter.\n"
-        "Example they gave: initials.initials('Ann Lee') returns 'A'; it should give 'AL'.\n"
-        "Component: alder/initials.py", "easy", False,
+        'A user says avatars show only one initial.', "easy", False,
         _src('''
         def initials(full_name):
             """First letter of each word, in capitals: 'ann lee' -> 'AL'."""
@@ -540,9 +497,7 @@ BUGS = [
          ("initials.initials('')", "")]),
 
     Bug("ALD-123", "units", "Temperature conversion wrong",
-        "The facilities dashboard reportedly converts 100 C to 180 F.\n"
-        "Example they gave: units.celsius_to_fahrenheit(100) returns 180; it should give 212.0.\n"
-        "Component: alder/units.py", "easy", False,
+        'The facilities dashboard reportedly converts temperatures wrongly.', "easy", False,
         _src('''
         def celsius_to_fahrenheit(c):
             """Convert Celsius to Fahrenheit."""
@@ -553,9 +508,7 @@ BUGS = [
          ("units.celsius_to_fahrenheit(-40)", -40.0)]),
 
     Bug("ALD-124", "uniques", "Unique customer count includes repeats",
-        "Marketing says the unique-customer count counts repeat customers twice.\n"
-        "Example they gave: uniques.unique_count([1, 1, 2]) returns 3; it should give 2.\n"
-        "Component: alder/uniques.py", "easy", False,
+        'Marketing says the unique-customer count counts repeat customers twice.', "easy", False,
         _src('''
         def unique_count(ids):
             """How many different ids are in the list."""
@@ -566,9 +519,7 @@ BUGS = [
          ("uniques.unique_count(['a', 'A'])", 2)]),
 
     Bug("ALD-125", "logs_view", "Log viewer shows the oldest lines",
-        "An engineer says the log viewer shows the first lines instead of the last ones.\n"
-        "Example they gave: logs_view.last_lines('a\\nb\\nc', 2) returns ['a', 'b']; it should give ['b', 'c'].\n"
-        "Component: alder/logs_view.py", "easy", False,
+        'An engineer says the log viewer shows the oldest lines instead of the newest.', "easy", False,
         _src('''
         def last_lines(text, n):
             """The last n lines of a text, oldest first."""

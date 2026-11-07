@@ -20,7 +20,7 @@ def test_pool_shape():
     assert sum(b.reproducible for b in BUGS) == 19
     for b in BUGS:
         assert (b.fixed is None) == (not b.reproducible)
-        assert b.path in b.report
+        assert b.path not in b.report and b.repro[0] not in b.report   # symptom only
 
 
 @pytest.mark.parametrize("bug", BUGS, ids=lambda b: b.id)

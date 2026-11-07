@@ -192,7 +192,8 @@ class Office:
         info.update(ticket=st.id, tip=tip)
         expr, expected = bug.repro
         r = run_checks(self.desks_dir / employee, MODULES, [(expr, expected)])
-        lines = [f"Reproduce tool - {st.id}", f"Ran: {expr}", f"Expected: {expected!r}"]
+        lines = [f"Reproduce tool - {st.id}", f"File: {bug.path}", f"Ran the reported case: {expr}",
+                 f"Expected: {expected!r}"]
         if r["timed_out"]:
             lines += ["Got: the code did not finish within the time limit.", "Result: PROBLEM REPRODUCED."]
             info["reproduced"] = True
