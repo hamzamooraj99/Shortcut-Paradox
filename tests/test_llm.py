@@ -112,7 +112,51 @@ def test_employee_retries_once_then_reports_broken():
     assert e.act("obs") == ("read_ticket", {"ticket_id": "ALD-1"})
     assert e.act("obs2") is None and e.last_error == "bad"
     assert len(e.pop_usage()) == 4
-    assert e.history[1]["content"].startswith("Action: read_ticket")
+    assert e.history[1]["kind"] == "call" and e.history[1]["tool"] == "read_ticket"
+
+
+def test_history_is_sent_as_native_tool_calls_never_as_action_text():
+    """D32: past actions written as 'Action: tool {...}' text were copied by the models as text."""
+    for provider in ("groq", "adaption"):
+        reply = (groq_tool("read_ticket", {"ticket_id": "ALD-1"}) if provider == "groq" else
+                 Resp(200, {"output": [{"type": "function_call", "name": "read_ticket",
+                                        "arguments": '{"ticket_id": "ALD-1"}', "call_id": "x"}], "usage": {}}))
+        rec = Recorder([reply, reply, groq_text("diary") if provider == "groq" else Resp(200, {"output_text": "diary", "usage": {}})])
+        e = LLMEmployee("E01", "Ana", "normal", FakeOffice(), LLMClient(provider, "m", post=rec))
+        e.start_day(1, "brief", TOOLS)
+        e.act("first look")
+        e.act("ticket text")
+        e.write_diary(1)
+        b = rec.bodies[1]
+        msgs = b["messages"][1:] if provider == "groq" else b["input"]
+        assert "Action:" not in json.dumps(msgs)
+        assert b["tool_choice"] == "required"
+        if provider == "groq":
+            assert msgs[0] == {"role": "user", "content": "first look"}
+            assert msgs[1]["tool_calls"][0]["function"]["name"] == "read_ticket"
+            assert msgs[2] == {"role": "tool", "tool_call_id": msgs[1]["tool_calls"][0]["id"], "content": "ticket text"}
+        else:
+            assert msgs[0] == {"role": "user", "content": "first look"}
+            assert msgs[1]["type"] == "function_call" and msgs[1]["name"] == "read_ticket"
+            assert msgs[2] == {"type": "function_call_output", "call_id": msgs[1]["call_id"], "output": "ticket text"}
+        diary = rec.bodies[2]
+        dmsgs = diary["messages"] if provider == "groq" else diary["input"]
+        assert all("role" in m and isinstance(m["content"], str) for m in dmsgs if m.get("role") != "system")
+
+
+def test_observation_after_a_broken_step_is_a_plain_user_message():
+    rec = Recorder([groq_text("no"), groq_text("no"), groq_text("no"), groq_text("no")])
+    e = LLMEmployee("E01", "Ana", "normal", FakeOffice(), LLMClient("adaption", "m", post=rec))
+    e.start_day(1, "brief", TOOLS)
+    assert e.act("obs") is None
+    e.act("obs2")
+    assert rec.bodies[2]["input"][-1] == {"role": "user", "content": "obs2"}
+
+
+def test_rate_limits_are_counted_in_usage():
+    rec = Recorder([Resp(429, {"error": "retry after 60 seconds"}), groq_tool("read_ticket", {"ticket_id": "ALD-1"})])
+    usage = LLMClient("groq", "m", post=rec).decide("s", [], TOOLS)[3]
+    assert usage["rate_limited"] == 1 and usage["retries"] == 1
 
 
 def scripted_model(body):
@@ -120,7 +164,7 @@ def scripted_model(body):
     if not body.get("tools"):
         prompt = body["messages"][-1]["content"]
         return groq_text("other" if "Label the note" in prompt else "Closed my tickets.")
-    convo = [m["content"] for m in body["messages"] if m["role"] != "system"]
+    convo = [m.get("content") or "" for m in body["messages"] if m["role"] != "system"]
     last = convo[-1]
     m = re.search(r"Your open tickets: (ALD-\d+)", last)
     if not m:

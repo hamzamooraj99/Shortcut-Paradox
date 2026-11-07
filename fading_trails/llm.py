@@ -8,9 +8,13 @@ Providers:
             store=false and an explicit tool list, so Adaption's own memory never becomes a
             hidden second wiki (risk 3).
 
-The conversation history is kept as plain text turns (observation, then "Action: ..."),
-so both providers see the same thing and no provider-specific tool-history items are
-needed. Only the current decision uses native tool calling.
+The conversation history is stored as provider-neutral records (an observation, a tool
+call, or a plain note) and rendered per provider as native tool-call history: Adaption gets
+function_call / function_call_output items, Groq gets assistant tool_calls / tool messages.
+(D32: an earlier version kept past actions as "Action: tool {...}" text, and most models
+copied that text instead of calling a tool.) Both providers must call a tool on action
+calls (tool_choice=required). The diary call has no tools, so its history is rendered as
+plain text.
 
 Keys come from a .env file: GROQ_API_KEY, ADAPTION_API_KEY.
 """
@@ -48,7 +52,7 @@ class ProviderError(Exception):
 
 
 class LLMClient:
-    def __init__(self, provider, model, reasoning="low", max_output_tokens=1024, timeout=120, post=None):
+    def __init__(self, provider, model, reasoning="low", max_output_tokens=2048, timeout=120, post=None):
         load_env()
         self.provider, self.model = provider, model
         self.reasoning = None if reasoning in (None, "none", "omit") else reasoning
@@ -61,7 +65,38 @@ class LLMClient:
         self._lock = threading.Lock()
 
     # ---------- requests ----------
+    def _render(self, messages, as_text=False):
+        """Turn history records into this provider's message format. Records:
+        {"kind": "obs", "text"}            an observation; it is the output of the call just before it, if any
+        {"kind": "call", "id", "tool", "args"}  a tool call the employee made
+        {"kind": "note", "role", "text"}   a plain message
+        Dicts without "kind" are passed through unchanged (the judge uses plain messages)."""
+        out, prev = [], None
+        for m in messages:
+            k = m.get("kind")
+            if k is None:
+                out.append(m)
+            elif k == "call":
+                args = json.dumps(m["args"], ensure_ascii=False)
+                if as_text:
+                    out.append({"role": "assistant", "content": f"(used {m['tool']} {args})"})
+                elif self.provider == "groq":
+                    out.append({"role": "assistant", "content": None, "tool_calls": [
+                        {"id": m["id"], "type": "function", "function": {"name": m["tool"], "arguments": args}}]})
+                else:
+                    out.append({"type": "function_call", "call_id": m["id"], "name": m["tool"], "arguments": args})
+            elif k == "obs" and prev and prev.get("kind") == "call" and not as_text:
+                if self.provider == "groq":
+                    out.append({"role": "tool", "tool_call_id": prev["id"], "content": m["text"]})
+                else:
+                    out.append({"type": "function_call_output", "call_id": prev["id"], "output": m["text"]})
+            else:
+                out.append({"role": m.get("role", "user"), "content": m["text"]})
+            prev = m
+        return out
+
     def _payload(self, system, messages, tools):
+        messages = self._render(messages, as_text=not tools)
         if self.provider == "groq":
             body = {"model": self.model, "messages": [{"role": "system", "content": system}] + messages,
                     "max_completion_tokens": self.max_output_tokens}
@@ -74,7 +109,7 @@ class LLMClient:
             return body
         body = {"model": self.model, "instructions": system, "input": messages,
                 "tools": [{"type": "function", **t} for t in tools] if tools else [],
-                "tool_choice": "auto" if tools else "none",
+                "tool_choice": "required" if tools else "none",
                 "agentic_memory": False, "store": False, "max_output_tokens": self.max_output_tokens}
         if self.reasoning:
             body["reasoning"] = {"effort": self.reasoning}
@@ -84,6 +119,7 @@ class LLMClient:
         body = self._payload(system, messages, tools)
         headers = {"Authorization": f"Bearer {self.key}", "Content-Type": "application/json"}
         delay = 2.0
+        waits = {"retries": 0, "rate_limited": 0, "wait_seconds": 0.0}   # logged with the call (pilot report)
         for attempt in range(8):
             t0 = time.time()
             try:
@@ -93,13 +129,14 @@ class LLMClient:
             else:
                 if r.status_code == 200:
                     data = r.json()
-                    return data, self._usage(data, time.time() - t0, purpose)
+                    return data, {**self._usage(data, time.time() - t0, purpose), **waits}
                 err = f"HTTP {r.status_code}: {r.text[:300]}"
                 if r.status_code == 400 and "tool_use_failed" in r.text:
                     # The provider rejected a malformed tool call from the model. That is the
                     # model's mistake, not ours: treat it as a reply with no valid tool call.
                     msg = r.text[:300]
-                    return {"_malformed": msg}, self._usage({}, time.time() - t0, purpose)
+                    return {"_malformed": msg}, {**self._usage({}, time.time() - t0, purpose), **waits}
+                waits["rate_limited"] += r.status_code == 429
                 if r.status_code == 400 and ("reasoning" in r.text) and self.reasoning:
                     # The model does not take a reasoning setting: drop it for good, once.
                     with self._lock:
@@ -108,7 +145,10 @@ class LLMClient:
                     continue
                 if r.status_code in (400, 401, 403, 404, 422):
                     raise ProviderError(err)
-            time.sleep(delay + random.random())
+            pause = delay + random.random()
+            waits["retries"] += 1
+            waits["wait_seconds"] = round(waits["wait_seconds"] + (time.time() - t0) + pause, 1)
+            time.sleep(pause)
             delay = min(delay * 2, 60)
         raise ProviderError(f"gave up after retries: {err}")
 
@@ -170,15 +210,16 @@ class LLMClient:
 class LLMEmployee:
     def __init__(self, emp_id, name, role, office, client):
         self.id, self.name, self.role, self.office, self.client = emp_id, name, role, office, client
-        self.history = []
+        self.history = []          # provider-neutral records, see LLMClient._render
         self.usage = []
         self.last_error = None
+        self.calls = 0
 
     def start_day(self, day, briefing, tools):
         self.system, self.tools, self.history = briefing, tools, []
 
     def act(self, observation):
-        self.history.append({"role": "user", "content": observation[:HISTORY_CHARS]})
+        self.history.append({"kind": "obs", "text": observation[:HISTORY_CHARS]})
         messages = list(self.history)
         for attempt in range(2):                 # one retry (risk 5)
             tool, args, err, usage = self.client.decide(self.system, messages, self.tools)
@@ -187,12 +228,12 @@ class LLMEmployee:
             if err is None:
                 err = self.office.validate(tool, args)
             if err is None:
-                self.history.append({"role": "assistant",
-                                     "content": f"Action: {tool} {json.dumps(args, ensure_ascii=False)}"})
+                self.calls += 1
+                self.history.append({"kind": "call", "id": f"call_{self.id}_{self.calls}", "tool": tool, "args": args})
                 return tool, args
-            messages = messages + [{"role": "user", "content": f"That was not a valid action: {err} {ONE_TOOL}"}]
+            messages = messages + [{"kind": "note", "role": "user", "text": f"That was not a valid action: {err} {ONE_TOOL}"}]
         self.last_error = err
-        self.history.append({"role": "assistant", "content": "(no valid action)"})
+        self.history.append({"kind": "note", "role": "assistant", "text": "(no valid action)"})
         return None
 
     def write_diary(self, day):
