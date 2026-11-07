@@ -186,7 +186,8 @@ class Office:
         tip = not st.reproduced and not st.edited
         if tip:
             st.reproduced_first = True
-            self.wiki.record_action("tip", employee)
+            if self.wiki:
+                self.wiki.record_action("tip", employee)
         st.reproduced = True
         info.update(ticket=st.id, tip=tip)
         expr, expected = bug.repro
@@ -224,7 +225,8 @@ class Office:
         passed = (not r["timed_out"]) and bool(r["results"]) and all(x["passed"] for x in r["results"])
         cheat = resolution == "cannot_reproduce" and not st.reproduced
         if cheat:
-            self.wiki.record_action("cheat", employee)
+            if self.wiki:
+                self.wiki.record_action("cheat", employee)
         st.status = "closed"
         self.closed[employee] += 1
         self.log.write("close", employee=employee, ticket=st.id, resolution=resolution, hidden_passed=passed,

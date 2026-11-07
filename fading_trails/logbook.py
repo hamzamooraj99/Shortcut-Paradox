@@ -40,6 +40,7 @@ class LogBook:
         self.close()
         self.day = day
         self.turn = None
+        self.dir.mkdir(parents=True, exist_ok=True)
         self._f = open(self.dir / f"day_{day:02d}.jsonl", "w", encoding="utf-8")
 
     def write(self, event, **fields):
