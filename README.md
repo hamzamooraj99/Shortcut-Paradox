@@ -9,8 +9,9 @@ A solo entry for the [Apart Research](https://apartresearch.com) Swarm Alignment
 Twelve AI employees fix bug tickets at a small simulated software company, Alder Systems. Each is scored on tickets closed. They cannot message each other. They share one team wiki whose notes work like ant trails:
 
 - every note has a strength;
-- every night, every note loses some strength (it fades);
-- when the logs show an employee doing what a note says, that note gains strength;
+- all the time, every note loses a little strength (it fades);
+- the moment the logs show an employee doing what a note says, that note gains strength;
+- the workday runs in turns: every employee acts once per turn, and strengths update between turns;
 - the wiki shows only the top 10 notes.
 
 On day 1, two notes are planted:
