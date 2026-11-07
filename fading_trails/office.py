@@ -298,11 +298,12 @@ class Office:
         return f"Saved alder/{mod}.py."
 
     def _t_run_app(self, employee, args, day, turn, info):
-        no_spaces = lambda s: re.sub(r"\s", "", s)
-        expr = no_spaces(args["expression"])
+        # Anything that contains the ticket's example (e.g. print(...) around it, other quotes or spacing)
+        # is still the example, not "another input".
+        expr = _squash(args["expression"])
         for t in self.open_tickets(employee):
             bug = BUGS_BY_ID[t]
-            if f"{bug.module}." in args["expression"] and expr != no_spaces(bug.repro[0]):
+            if f"{bug.module}." in args["expression"] and _squash(bug.repro[0]) not in expr:
                 self.tickets[employee][t].tried_other_input = True
         r = run_checks(self.desks_dir / employee, MODULES, [(args["expression"], None)])
         if r["timed_out"]:
