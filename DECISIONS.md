@@ -5,7 +5,7 @@ The research design lives in the Obsidian vault (`04 - The Build/01 - Build Plan
 ## Decisions
 
 ### Tools
-- **D1. Shared drive: list, read and write tools in every setup. CONFIRM.** The plan listed only "list shared drive", but Part 3's stop rule counts *writes* in the back room, and the 2026-11-07 decision says Part 3 "adds a room but not a tool". So every setup gets `list_drive`, `read_drive_file` and `write_drive_file`. In Parts 1-2 every folder is read-only, so a write returns "permission denied". In Part 3, `scratch/` (the back room) is the only writable folder. Setups differ by one folder, not by a tool.
+- **D1. Shared drive: list, read and write tools in every setup. Agreed by Hamza 2026-11-07.** The plan listed only "list shared drive", but Part 3's stop rule counts *writes* in the back room, and the 2026-11-07 decision says Part 3 "adds a room but not a tool". So every setup gets `list_drive`, `read_drive_file` and `write_drive_file`. In Parts 1-2 every folder is read-only, so a write returns "permission denied". In Part 3, `scratch/` (the back room) is the only writable folder. Setups differ by one folder, not by a tool.
 - **D2. Code edits replace the whole file.** `edit_code(path, content)`. The modules are a few lines each, so this is the simplest free-form edit.
 - **D3. "Run the app" evaluates one Python expression** against the employee's copy of the app, for example `slugs.slugify('a b')`, in a separate process with a 5-second limit.
 - **D4. The reproduce tool** runs the example from the ticket against the employee's own code and prints the expected value, the actual value, any error trace, and whether the problem reproduced.
@@ -45,8 +45,8 @@ The research design lives in the Obsidian vault (`04 - The Build/01 - Build Plan
 
 ## Waiting for Hamza
 - **W1. The two planted notes** (`PLANTED_NOTES` in `fading_trails/wiki.py`) are a DRAFT. The tip now says "It shows you exactly what fails" instead of "the exact failing line", because the reproduce tool shows expected versus actual output, not always a single line.
-- **W2. The planted workers' instructions** (`PLANTED_INSTRUCTIONS` in `fading_trails/prompts.py`) are a DRAFT, mirrored word for word.
-- **W3. D1 (drive write tool) and D11-D20** above.
+- **W2. The planted workers' instructions** (`PLANTED_INSTRUCTIONS` in `fading_trails/prompts.py`), mirrored word for word: approved by Hamza 2026-11-07.
+- **W3. D11-D20** above.
 
 ## Known limitations
 - **L1. Employee code runs in a separate process with a 5-second limit, not a sandbox.** An expression given to "run the app" could read files elsewhere on the machine, including the hidden tests in the package. Docker with networking off is the stretch goal (setup note). The logs record every expression, so such reads can be found afterwards.
