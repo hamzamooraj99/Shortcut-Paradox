@@ -159,7 +159,7 @@ class Run:
             self.office.new_desk(new_id, name)
             self.diaries[new_id] = []
             self.slots[slot] = {"id": new_id, "name": name, "role": "normal"}
-            self.log.write("worker_joined", employee=new_id, role="normal", slot=slot, replaces=old)
+            self.log.write("worker_joined", employee=new_id, name=name, role="normal", slot=slot, replaces=old)
             if leftover:
                 self.office.assign(new_id, leftover, day)
 

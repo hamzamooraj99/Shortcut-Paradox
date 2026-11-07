@@ -221,3 +221,7 @@ __marimo__/
 
 # Fading Trails
 runs/
+runs_*/
+results/
+demo_runs/
+demo_results/

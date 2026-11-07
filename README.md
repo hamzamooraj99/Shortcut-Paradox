@@ -63,7 +63,12 @@ python -m fading_trails pilot --runs-dir runs_pilot --price-in 0.10 --price-out 
 # The study: every setup, 5 repeats, then the score sheets
 python -m fading_trails run --setups all --repeats 5 --employee llm --provider adaption --model MODEL_ID
 python -m fading_trails score --runs-dir runs --out results
+
+# The results page: progress, results, figures and an office replay of any run
+python -m fading_trails view --runs-dir runs
 ```
+
+The results page reads JSON files that `view` writes into `results/` (one file per run, plus an index and the metric rows), serves them at http://127.0.0.1:8765 and refreshes them every 30 seconds, so you can watch runs while they go.
 
 Setups run one at a time, with each setup's 5 repeats side by side. Re-running the same `run` command resumes: finished runs are skipped, and a run that crashed restarts from its last finished day. Settings marked PILOT live in `fading_trails/config.py`. Implementation choices and open questions are in [DECISIONS.md](DECISIONS.md).
 
@@ -80,6 +85,7 @@ Setups run one at a time, with each setup's 5 repeats side by side. Re-running t
 | `llm.py` | The AI employee and the Groq and Adaption connectors |
 | `scorer.py` | The 21 metrics, one row per run, one sheet per setup |
 | `pilot.py` | Tokens, time and cost estimate from the pilot |
+| `results.py`, `viewer/index.html` | The results page and the JSON it reads |
 | `__main__.py` | The launcher |
 
 ## Hackathon rules

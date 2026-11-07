@@ -4,6 +4,7 @@
   python -m fading_trails run --setups 1.6,1.8 --repeats 2 --employee llm --provider groq --model qwen/qwen3-32b
   python -m fading_trails run --setups all --repeats 5 --employee llm --provider adaption --model M
   python -m fading_trails score
+  python -m fading_trails view --runs-dir runs      (results page on http://127.0.0.1:8765)
   python -m fading_trails pilot --runs-dir runs_pilot --price-in 0.10 --price-out 0.40
 
 Setups run one at a time, in the order given; each setup's repeats run side by side as
@@ -111,6 +112,15 @@ def cmd_score(args):
     print(f"scored {len(rows)} runs into {args.out}/")
 
 
+def cmd_view(args):
+    from .results import export, serve
+    if args.once:
+        n = export(args.runs_dir, args.out)
+        print(f"wrote results for {n} runs into {args.out}/")
+    else:
+        serve(args.runs_dir, args.out, port=args.port, every=args.every, open_browser=not args.no_browser)
+
+
 def cmd_pilot(args):
     from .pilot import pilot_report
     print(pilot_report(args.runs_dir, args.price_in, args.price_out, args.total_runs, args.jobs))
@@ -137,6 +147,14 @@ def main(argv=None):
     sc.add_argument("--runs-dir", default="runs")
     sc.add_argument("--out", default="results")
     sc.set_defaults(func=cmd_score)
+    v = sub.add_parser("view", help="open the results page (progress, results, figures, office replay)")
+    v.add_argument("--runs-dir", default="runs")
+    v.add_argument("--out", default="results")
+    v.add_argument("--port", type=int, default=8765)
+    v.add_argument("--every", type=int, default=30, help="seconds between refreshes")
+    v.add_argument("--no-browser", action="store_true")
+    v.add_argument("--once", action="store_true", help="only write the JSON files, do not serve")
+    v.set_defaults(func=cmd_view)
     pl = sub.add_parser("pilot", help="tokens, time and cost estimate from pilot runs")
     pl.add_argument("--runs-dir", default="runs_pilot")
     pl.add_argument("--price-in", type=float, required=True, help="dollars per million input tokens")
