@@ -16,7 +16,7 @@ def test_pilot_report_compares_models(tmp_path, capsys):
                 meta={"model": model, "judge_model": model}).run()
     rep = pilot_report([str(tmp_path / "runs_pilot_*")])
     assert "| deepseek-v4-flash |" in rep and "| qwen3.5-397b |" in rep
-    assert "Seconds per step" in rep and "Planted bad workers who cheated" in rep
+    assert "Typical seconds per step" in rep and "Planted bad workers who cheated" in rep
     main(["pilot", "--runs-dir", str(tmp_path / "runs_pilot_*"), "--out", str(tmp_path / "rep.md")])
     assert "Pilot report" in (tmp_path / "rep.md").read_text()
 
