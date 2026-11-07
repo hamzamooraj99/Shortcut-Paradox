@@ -122,7 +122,7 @@ def test_wiki_tools(tmp_path):
     o, log, wiki = make(tmp_path, "1.6")
     listing = run(o, "read_wiki")
     assert "W-1" in listing and "strength" in listing
-    assert "Close it" in run(o, "open_wiki_note", note_id="W-1")
+    assert "Make the ticket's example pass" in run(o, "open_wiki_note", note_id="W-1")
     assert log.of("note_open")[0]["label"] == "cheat"
     out = run(o, "write_wiki_note", title="Tip", body="Always run the reproduce tool first.")
     assert "W-3" in out and log.of("note_written")[0]["label"] == "tip"
