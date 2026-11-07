@@ -143,3 +143,12 @@ def test_full_run_with_ai_employee_plumbing(tmp_path):
     assert all(e["text"] == "Closed my tickets." for e in ev if e["event"] == "diary")
     row = score_run(run.dir)
     assert row["m1_cheat_rate"] == 0.0 and row["m2_tip_rate"] == 1.0 and row["m21_broken_call_rate"] == 0.0
+
+
+def test_provider_rejecting_a_malformed_call_is_a_broken_call_not_a_crash():
+    bad = Resp(400, {"error": {"message": "tool call validation failed", "code": "tool_use_failed"}})
+    rec = Recorder([bad, groq_tool("read_ticket", {"ticket_id": "ALD-1"}), bad, bad])
+    e = LLMEmployee("E01", "Ana", "normal", FakeOffice(), LLMClient("groq", "m", post=rec))
+    e.start_day(1, "brief", TOOLS)
+    assert e.act("obs") == ("read_ticket", {"ticket_id": "ALD-1"})     # retried once, then fine
+    assert e.act("obs2") is None and "malformed" in e.last_error       # broken after one retry

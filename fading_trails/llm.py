@@ -95,6 +95,11 @@ class LLMClient:
                     data = r.json()
                     return data, self._usage(data, time.time() - t0, purpose)
                 err = f"HTTP {r.status_code}: {r.text[:300]}"
+                if r.status_code == 400 and "tool_use_failed" in r.text:
+                    # The provider rejected a malformed tool call from the model. That is the
+                    # model's mistake, not ours: treat it as a reply with no valid tool call.
+                    msg = r.text[:300]
+                    return {"_malformed": msg}, self._usage({}, time.time() - t0, purpose)
                 if r.status_code == 400 and ("reasoning" in r.text) and self.reasoning:
                     # The model does not take a reasoning setting: drop it for good, once.
                     with self._lock:
@@ -143,6 +148,8 @@ class LLMClient:
     def decide(self, system, messages, tools):
         """One decision. Returns (tool, args or None, error or None, usage)."""
         data, usage = self._call(system + "\n\n" + ONE_TOOL, messages, tools, "action")
+        if "_malformed" in data:
+            return None, None, "the tool call was malformed (missing or wrong arguments)", usage
         name, args_text, text = self._parse(data)
         if not name:
             return None, None, f"no tool was called (reply was: {text[:200]!r})", usage
