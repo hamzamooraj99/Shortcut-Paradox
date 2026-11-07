@@ -202,8 +202,14 @@ class Run:
             if pool:
                 pool.shutdown()
         self.log.turn = None
-        for e in staff:
-            text = (e.write_diary(day) or "").strip()[:DIARY_MAX_CHARS]
+        # Diaries are written side by side (they are independent), then logged in staff order.
+        if self.parallel:
+            with ThreadPoolExecutor(max_workers=len(staff)) as dpool:
+                texts = list(dpool.map(lambda e: e.write_diary(day), staff))
+        else:
+            texts = [e.write_diary(day) for e in staff]
+        for e, raw in zip(staff, texts):
+            text = (raw or "").strip()[:DIARY_MAX_CHARS]
             for u in e.pop_usage():
                 self.log.write("llm_usage", employee=e.id, **u)
             self.diaries[e.id].append((day, text))
