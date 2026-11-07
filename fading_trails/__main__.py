@@ -2,12 +2,12 @@
 
   python -m fading_trails run --setups part1 --repeats 5 --employee fake
   python -m fading_trails run --setups 1.6,1.8 --repeats 2 --employee llm --provider groq --model qwen/qwen3-32b
-  python -m fading_trails run --setups all --repeats 5 --employee llm --provider adaption --model M --jobs 95
+  python -m fading_trails run --setups all --repeats 5 --employee llm --provider adaption --model M
   python -m fading_trails score
   python -m fading_trails pilot --runs-dir runs_pilot --price-in 0.10 --price-out 0.40
 
-Runs go repeat by repeat (all setups for repeat 0, then repeat 1, ...), so a stopped
-launch leaves the setups evenly covered. Re-running the same command resumes.
+Setups run one at a time, in the order given; each setup's repeats run side by side as
+one batch (5 runs at once with --repeats 5). Re-running the same command resumes.
 """
 import argparse
 import sys
@@ -88,14 +88,21 @@ def cmd_run(args):
         if s.part == 3 and status == "done" and s.run_id not in part3_done:
             part3_done.append(s.run_id)
 
-    # Everything runs in parallel (up to --jobs at once), except that the Part 3 stop rule needs
-    # the first two Part 3 runs to finish before the other Part 3 runs start.
+    # One setup at a time; its repeats run side by side as one batch (Hamza, 2026-11-07).
+    # Exception: the Part 3 stop rule needs the first two Part 3 runs (3.1 r0 and 3.2 r0)
+    # to finish before any other Part 3 run starts, so those two form their own batch.
     part3 = [s for s in queue if s.part == 3]
     need = max(0, 2 - len(part3_done))
-    first_wave = [s for s in queue if s.part != 3] + part3[:need]
-    with ThreadPoolExecutor(max_workers=args.jobs) as pool:
-        list(pool.map(one, first_wave))
-        list(pool.map(one, part3[need:]))
+    batches = [[s for s in queue if s.setup == setup] for setup in setups if not setup.startswith("3.")]
+    if part3[:need]:
+        batches.append(part3[:need])
+    for setup in setups:
+        rest = [s for s in part3[need:] if s.setup == setup]
+        if rest:
+            batches.append(rest)
+    for batch in batches:
+        with ThreadPoolExecutor(max_workers=args.jobs or len(batch)) as pool:
+            list(pool.map(one, batch))
 
 
 def cmd_score(args):
@@ -121,7 +128,8 @@ def main(argv=None):
     r.add_argument("--judge-model", default=None)
     r.add_argument("--reasoning", default="low", help="reasoning effort sent to the model, or 'none'")
     r.add_argument("--runs-dir", default="runs")
-    r.add_argument("--jobs", type=int, default=1, help="runs at the same time, e.g. 95 for everything at once")
+    r.add_argument("--jobs", type=int, default=None,
+                   help="most runs at the same time within a setup's batch (default: all its repeats)")
     for k in OVERRIDES:
         r.add_argument("--" + k.replace("_", "-"), type=float if k == "nonrepro_share" else int, default=None)
     r.set_defaults(func=cmd_run)

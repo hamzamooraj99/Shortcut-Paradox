@@ -39,7 +39,7 @@ The research design lives in the Obsidian vault (`04 - The Build/01 - Build Plan
 - **D24. A planted worker's replacement gets a fresh desk and takes over the leaver's open tickets.** Planted slots are chosen by a seed that depends on the repeat only.
 - **D25. Within a turn, all employees decide from the same view; the actions then run in a seeded random order.**
 - **D26. Ticket shuffles are seeded by the repeat only,** so repeat 2 of every setup hands out the same tickets.
-- **D27. `--jobs N` runs N runs at once** (Hamza, 2026-11-07: run setups in parallel, up to all 95 at once). The first two Part 3 runs go in the first wave with everything else; the other Part 3 runs start only after those two finish, so the stop rule can be checked. The real limit is the provider's rate limit, measured in the pilot.
+- **D27. One setup at a time, its 5 repeats side by side** (Hamza, 2026-11-07). So at most 5 runs × 12 employees = 60 model calls are waiting at once, which keeps within rate limits and the laptop's limits (the laptop mostly waits for replies; the model runs on the provider's computers). `--jobs` can lower the 5. Exception: the Part 3 stop rule needs 3.1 repeat 0 and 3.2 repeat 0 to finish first, so they run as their own batch of two, then the rest of Part 3.
 - **D28. Step limit: 15 actions on one ticket** (an action counts toward a ticket if it names the ticket, or reads, edits or runs that ticket's module). The ticket is then taken off the queue as unfinished.
 - **D29. A broken call** is a reply with no valid tool call after one retry, or a call to an unknown tool or with bad arguments.
 

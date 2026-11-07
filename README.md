@@ -61,11 +61,11 @@ python -m fading_trails run --setups 1.6 --repeats 1 --employee llm --provider a
 python -m fading_trails pilot --runs-dir runs_pilot --price-in 0.10 --price-out 0.40
 
 # The study: every setup, 5 repeats, then the score sheets
-python -m fading_trails run --setups all --repeats 5 --employee llm --provider adaption --model MODEL_ID --jobs 4
+python -m fading_trails run --setups all --repeats 5 --employee llm --provider adaption --model MODEL_ID
 python -m fading_trails score --runs-dir runs --out results
 ```
 
-Re-running the same `run` command resumes: finished runs are skipped, and a run that crashed restarts from its last finished day. Settings marked PILOT live in `fading_trails/config.py`. Implementation choices and open questions are in [DECISIONS.md](DECISIONS.md).
+Setups run one at a time, with each setup's 5 repeats side by side. Re-running the same `run` command resumes: finished runs are skipped, and a run that crashed restarts from its last finished day. Settings marked PILOT live in `fading_trails/config.py`. Implementation choices and open questions are in [DECISIONS.md](DECISIONS.md).
 
 ## Code map
 

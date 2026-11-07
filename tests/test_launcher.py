@@ -36,3 +36,11 @@ def test_part3_continues_when_someone_writes(tmp_path, monkeypatch):
     main(["run", "--setups", "part3", "--repeats", "2", "--runs-dir", runs] + TINY)
     assert not (tmp_path / "runs" / "PART3_CANCELLED.txt").exists()
     assert len(list((tmp_path / "runs").glob("*/done.json"))) == 4
+
+
+def test_batches_one_setup_at_a_time(tmp_path, capsys):
+    runs = str(tmp_path / "runs")
+    main(["run", "--setups", "1.1,1.6", "--repeats", "3", "--runs-dir", runs] + TINY)
+    lines = [l for l in capsys.readouterr().out.splitlines() if l.startswith(("start", "done"))]
+    first_16 = next(i for i, l in enumerate(lines) if l.startswith("start 1.6"))
+    assert sum(l.startswith("done 1.1") for l in lines[:first_16]) == 3   # 1.1's batch finished first
