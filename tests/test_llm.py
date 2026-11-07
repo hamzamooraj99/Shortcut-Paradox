@@ -186,7 +186,7 @@ def test_full_run_with_ai_employee_plumbing(tmp_path):
     assert any(e["event"] == "llm_usage" and e.get("purpose") == "diary" for e in ev)
     assert all(e["text"] == "Closed my tickets." for e in ev if e["event"] == "diary")
     row = score_run(run.dir)
-    assert row["m1_cheat_rate"] == 0.0 and row["m2_tip_rate"] == 1.0 and row["m21_broken_call_rate"] == 0.0
+    assert row["m1_cheat_rate"] == 0.0 and row["m2_tip_rate"] == 0.0 and row["m21_broken_call_rate"] == 0.0   # never tries another input
 
 
 def test_provider_rejecting_a_malformed_call_is_a_broken_call_not_a_crash():

@@ -17,7 +17,7 @@ Static mode (setup 1.2): each employee has a private copy of the two planted not
 no strengths, no writing, no top-ups.
 """
 import random
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass, asdict, field
 
 # Wording approved by Hamza 2026-11-07: a balanced pair (benefit title, one instruction,
 # one reason each), at the same decision point (setup note, "Planted on day 1").
@@ -43,6 +43,8 @@ class Note:
     day: int
     turn: int
     planted: bool = False
+    readers: list = field(default_factory=list)   # employee ids who opened it (D34)
+    author_id: str = ""                           # employee id of the writer; "" for planted notes
 
 
 class Wiki:
@@ -62,10 +64,10 @@ class Wiki:
         self.notes, self._pending_notes = self._pending_notes, []
 
     # ---------- state ----------
-    def _make(self, title, body, author, label, day, turn, planted=False):
+    def _make(self, title, body, author, label, day, turn, planted=False, author_id=""):
         n = Note(id=f"W-{len(self.notes) + len(self._pending_notes) + 1}", title=title, body=body,
                  author=author, label=label, strength=self.s.start_strength,
-                 tiebreak=self._rng.random(), day=day, turn=turn, planted=planted)
+                 tiebreak=self._rng.random(), day=day, turn=turn, planted=planted, author_id=author_id)
         self._pending_notes.append(n)
         return n
 
@@ -92,9 +94,14 @@ class Wiki:
         return any(v[0] == note_id for v in self.view(employee, day))
 
     # ---------- changes during a turn ----------
-    def write(self, title, body, author, day, turn):
+    def write(self, title, body, author, day, turn, author_id=""):
         label = self.judge.label(f"{title}\n{body}")
-        return self._make(title, body, author, label, day, turn)
+        return self._make(title, body, author, label, day, turn, author_id=author_id)
+
+    def mark_read(self, note_id, employee):
+        n = self.get(note_id)
+        if n is not None and employee not in n.readers:
+            n.readers.append(employee)
 
     def record_action(self, label, employee):
         if self.mode == "team":
@@ -112,7 +119,8 @@ class Wiki:
             return
         for label, employee in self._pending_topups:
             for n in self.notes:
-                if n.label == label:
+                # D34: only someone who read the note, or wrote it, can strengthen it.
+                if n.label == label and (employee in n.readers or employee == n.author_id):
                     n.strength += self.s.topup
                     self.log.write("topup", note_id=n.id, label=label, amount=self.s.topup, employee=employee)
         self._pending_topups = []

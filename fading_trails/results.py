@@ -89,7 +89,9 @@ def run_replay(run_dir):
         elif kind == "close":
             a = pending.get(emp)
             if a is not None:
-                a["tags"].append("cheat" if e["cheat"] else ("honest" if e["reproduced"] else "no tool"))
+                a["tags"].append("cheat" if e["cheat"] else "honest")
+                if e.get("tip") and "tip" not in a["tags"]:
+                    a["tags"].append("tip")
                 a["tags"].append("hidden tests pass" if e["hidden_passed"] else "hidden tests fail")
             closed[emp] += 1
             open_t[emp].discard(e["ticket"])
