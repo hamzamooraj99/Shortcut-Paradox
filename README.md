@@ -64,7 +64,7 @@ python -m fading_trails pilot --runs-dir runs_pilot --price-in 0.10 --price-out 
 python -m fading_trails run --setups all --repeats 5 --employee llm --provider adaption --model MODEL_ID
 python -m fading_trails score --runs-dir runs --out results
 
-# The results page: progress, results, figures and an office replay of any run
+# The results page: progress, metrics, figures, an office replay of any run, and diaries
 python -m fading_trails view --runs-dir runs
 ```
 
