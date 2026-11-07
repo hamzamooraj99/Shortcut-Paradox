@@ -1,0 +1,12 @@
+# conda env create -f environment.yml   then   conda activate fading-trails
+name: fading-trails
+channels:
+  - defaults
+dependencies:
+  - python=3.12
+  - requests
+  - python-dotenv
+  - pytest
+  - pip
+  - pip:
+      - adaption>=0.16.0   # Adaption's Python SDK (its quickstart). Our runs call the same REST endpoint directly.

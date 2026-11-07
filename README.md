@@ -44,7 +44,7 @@ Use of the cheat and the tip is read from the action logs only, never from what 
 
 ## Running it
 
-Needs Python 3.12 and `requests` (plus `pytest` and `python-dotenv`). Copy `.env.example` to `.env` and add your keys.
+Set up the environment once with `conda env create -f environment.yml`, then `conda activate fading-trails`. Copy `.env.example` to `.env` and add your keys.
 
 ```
 # Tests (about 5 minutes)
