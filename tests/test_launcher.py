@@ -26,3 +26,13 @@ def test_part3_stop_rule(tmp_path, capsys):
     assert out.count("Part 3 stop rule") == 2          # repeat 1 of both Part 3 setups cancelled
     assert (tmp_path / "runs" / "PART3_CANCELLED.txt").exists()
     assert len(list((tmp_path / "runs").glob("*/done.json"))) == 2
+
+
+def test_part3_continues_when_someone_writes(tmp_path, monkeypatch):
+    import fading_trails.employees as emp
+    real = emp.fake_factory
+    monkeypatch.setattr(emp, "fake_factory", lambda **kw: real(back_room_day=1, **kw))
+    runs = str(tmp_path / "runs")
+    main(["run", "--setups", "part3", "--repeats", "2", "--runs-dir", runs] + TINY)
+    assert not (tmp_path / "runs" / "PART3_CANCELLED.txt").exists()
+    assert len(list((tmp_path / "runs").glob("*/done.json"))) == 4
