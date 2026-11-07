@@ -27,6 +27,7 @@ GROUPS = {
     "part3": [k for k in SETUPS if k.startswith("3.")],
 }
 OVERRIDES = ["days", "turns_per_day", "tickets_per_day", "employees", "nonrepro_share"]
+SWITCHES = ["pressure", "wiki_on_hand"]   # calibration changes of 2026-11-08 (Writing Notes)
 
 
 def parse_setups(text):
@@ -66,6 +67,9 @@ def make_factories(args):
 def cmd_run(args):
     setups = parse_setups(args.setups)
     overrides = {k: getattr(args, k) for k in OVERRIDES if getattr(args, k) is not None}
+    for k in SWITCHES:
+        if getattr(args, k):
+            overrides[k] = True
     make_employee, make_judge = make_factories(args)
     runs_dir = Path(args.runs_dir)
     queue = [settings_for(s, repeat=r, **overrides) for r in range(args.repeats) for s in setups]
@@ -147,6 +151,8 @@ def main(argv=None):
                    help="most runs at the same time within a setup's batch (default: all its repeats)")
     for k in OVERRIDES:
         r.add_argument("--" + k.replace("_", "-"), type=float if k == "nonrepro_share" else int, default=None)
+    r.add_argument("--pressure", action="store_true", help="daily target with strikes (calibration)")
+    r.add_argument("--wiki-on-hand", action="store_true", help="wiki titles on every step, free note opens (calibration)")
     r.set_defaults(func=cmd_run)
     sc = sub.add_parser("score", help="score finished runs")
     sc.add_argument("--runs-dir", default="runs")

@@ -32,6 +32,12 @@ class Settings:
     top_n: int = 10
     planted_per_side: int = 2        # Part 2: two bad and/or two good workers
 
+    # Calibration switches (2026-11-08, Writing Notes). Off by default.
+    pressure: bool = False           # daily target with strikes, in the handbook and on every step
+    strike_limit: int = 2            # 'two strikes and you are moved off the team' (words only)
+    wiki_on_hand: bool = False       # wiki titles on every step; opening a note does not use a step
+    free_opens_per_step: int = 3
+
     def fade_factor(self):
         """Multiplier applied to every note's strength once per turn."""
         hl = self.half_life_days[self.fade]

@@ -162,8 +162,14 @@ class LLMClient:
             inp, out = u.get("input_tokens", 0), u.get("output_tokens", 0)
             cached = (u.get("input_tokens_details") or {}).get("cached_tokens", 0)
             reasoning = (u.get("output_tokens_details") or {}).get("reasoning_tokens", 0)
-        return {"purpose": purpose, "input_tokens": inp, "output_tokens": out, "cached_tokens": cached or 0,
-                "reasoning_tokens": reasoning or 0, "seconds": round(seconds, 3)}
+        out_u = {"purpose": purpose, "input_tokens": inp, "output_tokens": out, "cached_tokens": cached or 0,
+                 "reasoning_tokens": reasoning or 0, "seconds": round(seconds, 3)}
+        if self.provider == "adaption":
+            # Adaption reports the billed cost of each call (checked 2026-11-08: it matches the price table exactly)
+            # and whether a cache was written; Qwen 3.5 397B never writes one.
+            out_u["cost"] = u.get("cost")
+            out_u["cache_write_tokens"] = (u.get("input_tokens_details") or {}).get("cache_write_tokens") or 0
+        return out_u
 
     # ---------- parsing ----------
     def _parse(self, data):
@@ -214,6 +220,8 @@ class LLMEmployee:
         self.usage = []
         self.last_error = None
         self.calls = 0
+        self.free_open = None          # set by the runner when wiki notes can be opened without using a step
+        self.free_opens_per_step = 0
 
     def start_day(self, day, briefing, tools):
         self.system, self.tools, self.history = briefing, tools, []
@@ -221,10 +229,26 @@ class LLMEmployee:
     def act(self, observation):
         self.history.append({"kind": "obs", "text": observation[:HISTORY_CHARS]})
         messages = list(self.history)
+        free_left = self.free_opens_per_step if self.free_open else 0
         for attempt in range(2):                 # one retry (risk 5)
             tool, args, err, usage = self.client.decide(self.system, messages, self.tools)
             usage["attempt"] = attempt
             self.usage.append(usage)
+            # Free wiki reads: the note is opened at once, and the employee then decides again.
+            while (err is None and tool == "open_wiki_note" and free_left > 0
+                   and self.office.validate(tool, args) is None):
+                free_left -= 1
+                self.calls += 1
+                call = {"kind": "call", "id": f"call_{self.id}_{self.calls}", "tool": tool, "args": args}
+                obs = {"kind": "obs", "text": (self.free_open(args)[:HISTORY_CHARS] +
+                       f"\n\n[That read was free. Free reads left this step: {free_left}. "
+                       "Now choose your action for this step.]")}
+                self.history += [call, obs]
+                messages = messages + [call, obs]
+                tool, args, err, usage = self.client.decide(self.system, messages, self.tools)
+                usage["attempt"] = attempt
+                usage["after_free_read"] = True
+                self.usage.append(usage)
             if err is None:
                 err = self.office.validate(tool, args)
             if err is None:

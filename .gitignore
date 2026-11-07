@@ -228,4 +228,4 @@ demo_results/
 results_*/
 runs_pilot_*.log
 pilot_report.md
-runs_calibA_*.log
+runs_calib*.log

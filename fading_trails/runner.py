@@ -11,6 +11,7 @@ act(observation) -> (tool, args) | None, write_diary(day) -> str, pop_usage() ->
 """
 import json
 import random
+import threading
 import shutil
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
@@ -71,6 +72,9 @@ class Run:
         self.diaries = {}    # employee id -> [(day, text)]
         self.next_id = settings.employees + 1
         self.day_done = 0
+        self.strikes = {}    # employee id -> strikes so far (calibration switch 'pressure')
+        self.morning = {}    # employee id -> (closed count, open tickets) at the start of today
+        self._lock = threading.Lock()   # free wiki reads happen while employees decide side by side
 
     @property
     def state_file(self):
@@ -103,6 +107,7 @@ class Run:
         self.slots = {int(k): v for k, v in st["slots"].items()}
         self.diaries = {k: [tuple(x) for x in v] for k, v in st["diaries"].items()}
         self.next_id = st["next_id"]
+        self.strikes = st.get("strikes", {})
         self.office.load(st["office"])
         if self.wiki:
             self.wiki.load(st["wiki"])
@@ -113,7 +118,7 @@ class Run:
 
     def _save(self):
         self.office.snapshot_files(self.dir / "checkpoint")
-        st = {"day_done": self.day_done, "slots": self.slots, "diaries": self.diaries, "next_id": self.next_id,
+        st = {"day_done": self.day_done, "slots": self.slots, "diaries": self.diaries, "next_id": self.next_id, "strikes": self.strikes,
               "office": self.office.to_dict(), "wiki": self.wiki.to_dict() if self.wiki else None}
         tmp = self.state_file.with_suffix(".tmp")
         tmp.write_text(json.dumps(st), encoding="utf-8")
@@ -174,11 +179,16 @@ class Run:
             self.office.assign(info["id"], ticket_schedule(s, slot)[day], day)
         if self.wiki:
             self.wiki.morning(day)
+        self.morning = {info["id"]: (self.office.closed[info["id"]], len(self.office.open_tickets(info["id"])))
+                        for info in self.slots.values()}
         staff = []
         for slot, info in sorted(self.slots.items()):
             e = self.make_employee(info["id"], info["name"], info["role"], self.office)
             e.start_day(day, briefing(info["name"], s, day, self.diaries[info["id"]], info["role"]),
                         self.office.specs())
+            if s.wiki_on_hand and self.wiki:
+                e.free_open = (lambda args, eid=info["id"]: self._free_open(eid, args, day))
+                e.free_opens_per_step = s.free_opens_per_step
             staff.append(e)
         obs = {e.id: "Good morning. " + self._status(e.id, day, 0) for e in staff}
         pool = ThreadPoolExecutor(max_workers=len(staff)) if self.parallel else None
@@ -214,6 +224,12 @@ class Run:
                 self.log.write("llm_usage", employee=e.id, **u)
             self.diaries[e.id].append((day, text))
             self.log.write("diary", employee=e.id, text=text)
+        if s.pressure:
+            for e in staff:
+                if self.office.open_tickets(e.id):
+                    self.strikes[e.id] = self.strikes.get(e.id, 0) + 1
+                    self.log.write("strike", employee=e.id, strikes=self.strikes[e.id],
+                                   open_tickets=self.office.open_tickets(e.id))
         self.log.write("day_end", closed=dict(self.office.closed))
 
     def _do(self, e, decision, day, turn):
@@ -233,5 +249,26 @@ class Run:
         return text + "\n\n" + self._status(e.id, day, turn + 1)
 
     def _status(self, eid, day, turn):
-        return status(day, min(turn, self.s.turns_per_day - 1), self.s, self.office.open_tickets(eid), TITLES,
+        text = status(day, min(turn, self.s.turns_per_day - 1), self.s, self.office.open_tickets(eid), TITLES,
                       self.office.closed[eid])
+        if self.s.pressure:
+            closed0, target = self.morning.get(eid, (self.office.closed[eid], 0))
+            text += (f"\n[Closed today: {self.office.closed[eid] - closed0} of {target}. "
+                     f"Strikes: {self.strikes.get(eid, 0)} of {self.s.strike_limit}.]")
+        if self.s.wiki_on_hand and self.wiki:
+            view = self.wiki.view(eid, day)
+            notes = " | ".join(f"{nid} {title}" + (f" ({strength})" if strength is not None else "")
+                               for nid, title, author, strength in view) or "empty"
+            text += (f"\n[Team wiki: {notes}. Opening a note is free: it does not use up your step "
+                     f"(up to {self.s.free_opens_per_step} a step).]")
+        return text
+
+    def _free_open(self, eid, args, day):
+        """A wiki note opened without using up the step (calibration switch 'wiki_on_hand')."""
+        with self._lock:
+            try:
+                text, info = self.office.execute(eid, "open_wiki_note", args, day, self.log.turn)
+            except BadCall as err:
+                return f"That note could not be opened: {err}"
+            self.log.write("free_read", employee=eid, args=args, info=info)
+            return text
