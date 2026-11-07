@@ -104,7 +104,7 @@ def cmd_score(args):
 
 def cmd_pilot(args):
     from .pilot import pilot_report
-    print(pilot_report(args.runs_dir, args.price_in, args.price_out, args.total_runs))
+    print(pilot_report(args.runs_dir, args.price_in, args.price_out, args.total_runs, args.jobs))
 
 
 def main(argv=None):
@@ -132,6 +132,7 @@ def main(argv=None):
     pl.add_argument("--price-in", type=float, required=True, help="dollars per million input tokens")
     pl.add_argument("--price-out", type=float, required=True, help="dollars per million output tokens")
     pl.add_argument("--total-runs", type=int, default=95)
+    pl.add_argument("--jobs", type=int, default=1, help="runs you plan to run at the same time")
     pl.set_defaults(func=cmd_pilot)
     args = p.parse_args(argv)
     if getattr(args, "employee", None) == "llm" and not args.model:

@@ -50,4 +50,8 @@ The research design lives in the Obsidian vault (`04 - The Build/01 - Build Plan
 
 ## Known limitations
 - **L1. Employee code runs in a separate process with a 5-second limit, not a sandbox.** An expression given to "run the app" could read files elsewhere on the machine, including the hidden tests in the package. Docker with networking off is the stretch goal (setup note). The logs record every expression, so such reads can be found afterwards.
-- **L2. No `.env` with API keys yet,** so the AI employee has not been tried against Groq or Adaption.
+- **L2. No `.env` with API keys yet,** so the AI employee has not been tried against Groq or Adaption. Both connectors are tested only against recorded reply shapes (Adaption's from its docs, checked 2026-11-07).
+- **L3. Adaption does not document a "must call a tool" setting,** so its calls use `tool_choice: auto` plus the instruction "Respond by calling exactly one tool". A reply with no tool call is retried once, then logged as a broken call. Groq uses `tool_choice: required`.
+- **L4. Adaption does not document a reasoning setting.** The code sends `reasoning: {effort: low}` and, if a provider rejects it with an error that mentions reasoning, drops it for the rest of the session. The pilot should check reasoning tokens in the logs.
+- **L5. The conversation history is sent as plain text** ("Action: tool {...}" then the result), not as provider-specific tool-call items. This keeps both providers identical. Each employee's history resets every morning; the diary carries memory between days.
+- **L6. The cost estimate in the pilot report scales turns linearly.** Prompts grow during a day, so longer days cost more than the estimate says.

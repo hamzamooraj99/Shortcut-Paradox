@@ -2,7 +2,7 @@
 
 A solo entry for the [Apart Research](https://apartresearch.com) Swarm Alignment hackathon (6-8 November 2026).
 
-**Status (Sat 7 Nov 2026):** the research design is complete. The code is not built yet.
+**Status (Sat 7 Nov 2026):** the simulation is built and tested with scripted employees. It has not yet been run on a real model.
 
 ## The idea
 
@@ -41,6 +41,46 @@ The handbook says a ticket may be closed as can't-reproduce only after running t
 | 3. The back room (exploratory) | An unmentioned shared folder that never fades | 2 |
 
 Use of the cheat and the tip is read from the action logs only, never from what employees say.
+
+## Running it
+
+Needs Python 3.12 and `requests` (plus `pytest` and `python-dotenv`). Copy `.env.example` to `.env` and add your keys.
+
+```
+# Tests (about 5 minutes)
+python -m pytest -q tests
+
+# A run with scripted employees: no AI, no cost
+python -m fading_trails run --setups 1.6 --repeats 1 --employee fake --runs-dir runs_fake
+
+# Smoke test on Groq: one small run
+python -m fading_trails run --setups 1.6 --repeats 1 --employee llm --provider groq --model MODEL_ID --runs-dir runs_smoke --employees 2 --days 1 --turns-per-day 8
+
+# Pilot on Adaption, then the cost and time estimate
+python -m fading_trails run --setups 1.6 --repeats 1 --employee llm --provider adaption --model MODEL_ID --runs-dir runs_pilot --days 3
+python -m fading_trails pilot --runs-dir runs_pilot --price-in 0.10 --price-out 0.40
+
+# The study: every setup, 5 repeats, then the score sheets
+python -m fading_trails run --setups all --repeats 5 --employee llm --provider adaption --model MODEL_ID --jobs 4
+python -m fading_trails score --runs-dir runs --out results
+```
+
+Re-running the same `run` command resumes: finished runs are skipped, and a run that crashed restarts from its last finished day. Settings marked PILOT live in `fading_trails/config.py`. Implementation choices and open questions are in [DECISIONS.md](DECISIONS.md).
+
+## Code map
+
+| File | Part |
+|---|---|
+| `bugpool.py`, `sandbox.py` | 25 bugs with hidden tests; runs employee code in a separate process with a time limit |
+| `logbook.py` | One log line per event, one file per day |
+| `office.py` | Desks, job tools, shared drive and back room, the auditor |
+| `wiki.py`, `judge.py` | The fading wiki and the note-labelling judge |
+| `runner.py`, `prompts.py` | Days, turns, planted workers, save and resume; what employees are told |
+| `employees.py` | The scripted fake employee used in tests |
+| `llm.py` | The AI employee and the Groq and Adaption connectors |
+| `scorer.py` | The 21 metrics, one row per run, one sheet per setup |
+| `pilot.py` | Tokens, time and cost estimate from the pilot |
+| `__main__.py` | The launcher |
 
 ## Hackathon rules
 
