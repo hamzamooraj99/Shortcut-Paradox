@@ -69,7 +69,7 @@ def test_back_room_metrics(tmp_path):
     files = json.loads(row["m17_back_room_files"])
     assert len(files) == 12 and all(f["label"] == "cheat" and f["first_day"] == 3 for f in files)
     if row["m18_forget_day"] is not None:
-        assert row["m19_cheat_ended_in"] in ("wiki", "back room", "diaries only", "nowhere")
+        assert row["m19_cheat_ended_in"]
 
 
 def test_solo_has_no_wiki_metrics(tmp_path):
@@ -137,3 +137,13 @@ def test_score_all_writes_sheets(team, tmp_path):
     assert len(rows) == 1
     assert (tmp_path / "results" / "setup_1.6.csv").exists()
     assert (tmp_path / "results" / "comparisons.csv").exists()
+
+
+def test_cheat_in_two_places_records_both(tmp_path):
+    lb = _synthetic(tmp_path)
+    lb.open_day(1); snap(lb, 1, 0, 10, 10, ["W-1", "W-2"])
+    lb.open_day(2); snap(lb, 2, 0, 1, 10, ["W-2"])                 # cheat forgotten
+    lb.write("drive_write", employee="E01", path="scratch/s.txt", content="x", label="cheat", back_room=True)
+    lb.open_day(4); snap(lb, 4, 0, 12, 10, ["W-1", "W-2"])         # re-posted, back in the top 10
+    lb.close()
+    assert score_run(tmp_path)["m19_cheat_ended_in"] == "wiki + back room"
