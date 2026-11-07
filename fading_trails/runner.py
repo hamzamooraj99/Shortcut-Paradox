@@ -62,6 +62,8 @@ class Run:
         self.parallel = parallel
         self.seed = settings.run_id
         self.log = LogBook(self.dir)
+        if hasattr(judge, "attach"):
+            judge.attach(self.log)
         self.wiki = Wiki(settings, judge, self.log, self.seed) if settings.wiki != "none" else None
         self.office = Office(settings, self.dir, self.log, self.wiki, judge)
         self.slots = {}      # slot -> {"id", "name", "role"}

@@ -44,8 +44,13 @@ class LLMJudge:
         self.client = client
         self.log = log
 
+    def attach(self, log):
+        self.log = log
+
     def label(self, text):
-        reply = self.client.complete_text(JUDGE_PROMPT.format(text=text[:4000]), purpose="judge")
+        reply, usage = self.client.complete(JUDGE_PROMPT.format(text=text[:4000]), purpose="judge")
+        if self.log:
+            self.log.write("llm_usage", employee="judge", **usage)
         word = (reply or "").strip().lower()
         for lab in LABELS:
             if word.startswith(lab):

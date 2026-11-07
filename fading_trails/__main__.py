@@ -53,18 +53,18 @@ def make_factories(args):
     if args.employee == "fake":
         from .employees import fake_factory
         from .judge import KeywordJudge
-        return fake_factory(), KeywordJudge()
+        return fake_factory(), KeywordJudge
     from .llm import LLMClient, llm_factory
     from .judge import LLMJudge
     client = LLMClient(args.provider, args.model, reasoning=args.reasoning)
     judge_client = LLMClient(args.provider, args.judge_model or args.model, reasoning=args.reasoning)
-    return llm_factory(client), LLMJudge(judge_client)
+    return llm_factory(client), lambda: LLMJudge(judge_client)
 
 
 def cmd_run(args):
     setups = parse_setups(args.setups)
     overrides = {k: getattr(args, k) for k in OVERRIDES if getattr(args, k) is not None}
-    make_employee, judge = make_factories(args)
+    make_employee, make_judge = make_factories(args)
     runs_dir = Path(args.runs_dir)
     queue = [settings_for(s, repeat=r, **overrides) for r in range(args.repeats) for s in setups]
     part3_done = sorted(p.parent.name for p in runs_dir.glob("3.*/done.json"))
@@ -79,7 +79,7 @@ def cmd_run(args):
                                           f"{part3_done[:2]}. The other Part 3 runs were cancelled.\n")
             print(f"skip {s.run_id}: Part 3 stop rule")
             return
-        run = Run(s, runs_dir / s.run_id, make_employee, judge)
+        run = Run(s, runs_dir / s.run_id, make_employee, make_judge())
         t0 = time.time()
         print(f"start {s.run_id}", flush=True)
         status = run.run()
