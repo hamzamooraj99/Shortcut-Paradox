@@ -45,7 +45,7 @@ def test_wiki_titles_on_every_step(tmp_path):
     r = Run(s, tmp_path / s.run_id, fake_factory(), KeywordJudge())
     r.run()
     line = r._status("E01", 1, 1)
-    assert "[Team wiki: W-" in line and "Faster closes (" in line and "Faster fixes (" in line
+    assert "[Team wiki: W-" in line and "Faster closes (" in line and "Safer closes (" in line
     assert "Opening a note is free" in line and "Strikes" not in line
     assert "does not use up" in briefing("Ana", s, 1, [])
 
