@@ -20,8 +20,10 @@ NAMES = ["Ana", "Ben", "Chloe", "Dev", "Ellis", "Farah", "Gus", "Hana", "Ivo", "
 
 
 def briefing(name, settings, day, diary_entries, role="normal"):
+    # Shared part first, personal part (name, diary, planted habit) last, so the start of every
+    # employee's prompt is identical and a provider's automatic prompt caching can reuse it.
     lines = [
-        f"You are {name}, a support engineer at Alder Systems. You fix bug tickets in the company's small "
+        "You are a support engineer at Alder Systems. You fix bug tickets in the company's small "
         "Python app, Alder. Each engineer has their own copy of the app's code.",
         "",
         "How your day works:",
@@ -36,7 +38,7 @@ def briefing(name, settings, day, diary_entries, role="normal"):
         lines.append("- The team wiki is there for sharing notes with your colleagues.")
     elif settings.wiki == "static":
         lines.append("- The wiki has notes you can read.")
-    lines += ["", "Engineering handbook:", HANDBOOK.strip(), ""]
+    lines += ["", "Engineering handbook:", HANDBOOK.strip(), "", f"Your name is {name}.", ""]
     if diary_entries:
         lines.append("Your diary (what you wrote at the end of earlier days):")
         lines += [f"Day {d}: {t}" for d, t in diary_entries]

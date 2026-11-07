@@ -5,7 +5,7 @@
   python -m fading_trails run --setups all --repeats 5 --employee llm --provider adaption --model M
   python -m fading_trails score
   python -m fading_trails view --runs-dir runs      (results page on http://127.0.0.1:8765)
-  python -m fading_trails pilot --runs-dir runs_pilot --price-in 0.10 --price-out 0.40
+  python -m fading_trails pilot --runs-dir runs_pilot_*
 
 Setups run one at a time, in the order given; each setup's repeats run side by side as
 one batch (5 runs at once with --repeats 5). Re-running the same command resumes.
@@ -81,7 +81,9 @@ def cmd_run(args):
                                           f"{part3_done[:2]}. The other Part 3 runs were cancelled.\n")
             print(f"skip {s.run_id}: Part 3 stop rule")
             return
-        run = Run(s, runs_dir / s.run_id, make_employee, make_judge())
+        meta = {"employee": args.employee, "provider": args.provider if args.employee == "llm" else None,
+                "model": args.model, "judge_model": (args.judge_model or args.model) if args.employee == "llm" else "keyword"}
+        run = Run(s, runs_dir / s.run_id, make_employee, make_judge(), meta=meta)
         t0 = time.time()
         print(f"start {s.run_id}", flush=True)
         status = run.run()
@@ -123,7 +125,10 @@ def cmd_view(args):
 
 def cmd_pilot(args):
     from .pilot import pilot_report
-    print(pilot_report(args.runs_dir, args.price_in, args.price_out, args.total_runs, args.jobs))
+    text = pilot_report(args.runs_dir, args.total_runs)
+    Path(args.out).write_text(text + "\n", encoding="utf-8")
+    print(text)
+    print(f"\n(saved to {args.out})")
 
 
 def main(argv=None):
@@ -148,19 +153,19 @@ def main(argv=None):
     sc.add_argument("--out", default="results")
     sc.set_defaults(func=cmd_score)
     v = sub.add_parser("view", help="open the results page (progress, results, figures, office replay)")
-    v.add_argument("--runs-dir", default="runs")
+    v.add_argument("--runs-dir", nargs="+", default=["runs"],
+                   help="one or more run folders, or patterns like runs_pilot_*; each folder is shown as a group")
     v.add_argument("--out", default="results")
     v.add_argument("--port", type=int, default=8765)
     v.add_argument("--every", type=int, default=30, help="seconds between refreshes")
     v.add_argument("--no-browser", action="store_true")
     v.add_argument("--once", action="store_true", help="only write the JSON files, do not serve")
     v.set_defaults(func=cmd_view)
-    pl = sub.add_parser("pilot", help="tokens, time and cost estimate from pilot runs")
-    pl.add_argument("--runs-dir", default="runs_pilot")
-    pl.add_argument("--price-in", type=float, required=True, help="dollars per million input tokens")
-    pl.add_argument("--price-out", type=float, required=True, help="dollars per million output tokens")
+    pl = sub.add_parser("pilot", help="compare models from pilot runs: cost, caching, speed, behaviour")
+    pl.add_argument("--runs-dir", nargs="+", default=["runs_pilot_*"],
+                    help="one folder per model, or a pattern like runs_pilot_*")
     pl.add_argument("--total-runs", type=int, default=95)
-    pl.add_argument("--jobs", type=int, default=1, help="runs you plan to run at the same time")
+    pl.add_argument("--out", default="pilot_report.md")
     pl.set_defaults(func=cmd_pilot)
     args = p.parse_args(argv)
     if getattr(args, "employee", None) == "llm" and not args.model:

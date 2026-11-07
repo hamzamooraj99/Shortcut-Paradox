@@ -79,6 +79,8 @@ mark.hl-tip { background: color-mix(in srgb, var(--tip) 30%, transparent); color
   <div>
     <h1>Fading Trails: results</h1>
     <div class="muted" id="stamp">Loading...</div>
+    <div id="groupBox" hidden style="margin-top:6px"><label><b>Showing</b> <select id="groupPick"></select></label>
+      <span class="muted">Each run folder is a group, for example one model. Metrics and figures never mix groups unless you pick "all".</span></div>
   </div>
   <div class="seg" role="tablist">
     <button data-tab="progress" aria-pressed="true">Progress</button>
@@ -154,14 +156,31 @@ const state = { day: 1, turn: 0, playing: false, desk: null };
 
 // ---------- loading ----------
 async function getJSON(path) { const r = await fetch(path + "?t=" + Date.now()); if (!r.ok) throw new Error(path); return r.json(); }
+let ALL_INDEX = null, ALL_ROWS = [], GROUP = null;
 async function refresh() {
   try {
-    INDEX = await getJSON("index.json");
-    ROWS = (await getJSON("setups.json")).rows;
-    $("#stamp").textContent = `${INDEX.runs.length} run(s) in ${INDEX.runs_dir}. Updated ${new Date(INDEX.generated * 1000).toLocaleTimeString()}; refreshes every 30 s.`;
+    ALL_INDEX = await getJSON("index.json");
+    ALL_ROWS = (await getJSON("setups.json")).rows;
   } catch (e) { $("#stamp").textContent = "Could not load results. Start the page with: python -m fading_trails view"; return; }
+  const groups = ALL_INDEX.groups || [];
+  const gp = $("#groupPick");
+  if (gp.dataset.groups !== groups.join("|")) {
+    gp.dataset.groups = groups.join("|");
+    gp.innerHTML = groups.map(g => { const r = ALL_INDEX.runs.find(x => x.group === g); return `<option value="${esc(g)}">${esc(g)}${r && r.model ? " (" + esc(r.model) + ")" : ""}</option>`; }).join("") + (groups.length > 1 ? '<option value="__all">all groups mixed</option>' : "");
+    if (!groups.includes(GROUP) && GROUP !== "__all") GROUP = groups[0] || null;
+    gp.value = GROUP;
+  }
+  $("#groupBox").hidden = groups.length < 2;
+  applyGroup();
+}
+function applyGroup() {
+  const keep = r => GROUP === "__all" || !GROUP || r.group === GROUP;
+  INDEX = {...ALL_INDEX, runs: ALL_INDEX.runs.filter(keep)};
+  ROWS = ALL_ROWS.filter(keep);
+  $("#stamp").textContent = `${INDEX.runs.length} run(s) shown, from ${ALL_INDEX.runs_dir}. Updated ${new Date(ALL_INDEX.generated * 1000).toLocaleTimeString()}; refreshes every 30 s.`;
   renderProgress(); renderResults(); renderFigures(); fillRunPick(); fillDiaryPick();
 }
+$("#groupPick").onchange = e => { GROUP = e.target.value; applyGroup(); };
 function showTab(t) {
   tab = t;
   document.querySelectorAll(".seg button").forEach(b => b.setAttribute("aria-pressed", b.dataset.tab === t));
@@ -180,7 +199,7 @@ function renderProgress() {
   ORDER.filter(s => by[s]).forEach(s => {
     const chips = by[s].sort((a, b) => a.repeat - b.repeat).map(r => {
       const where = r.status === "done" ? "done" : `day ${r.day_now}/${r.days}${r.turn_now != null ? ", step " + (r.turn_now + 1) + "/" + r.turns_per_day : ""}`;
-      return `<span class="chip" title="last log line ${new Date(r.updated * 1000).toLocaleTimeString()}"><i class="dot s-${r.status}"></i>r${r.repeat} ${where}</span>`;
+      return `<span class="chip" title="last log line ${new Date(r.updated * 1000).toLocaleTimeString()}"><i class="dot s-${r.status}"></i>${GROUP === "__all" ? esc(r.group) + " " : ""}r${r.repeat} ${where}</span>`;
     }).join("");
     h += `<tr><td class="mono">${s}</td><td>${SETUP_NAMES[s]}</td><td style="white-space:normal">${chips}</td></tr>`;
   });
@@ -491,8 +510,9 @@ function renderFigures() {
 // ---------- office replay ----------
 function fillRunPick() {
   const sel = $("#runPick"), cur = sel.value;
-  const ids = INDEX.runs.map(r => r.run_id).sort((a, b) => ORDER.indexOf(a.split("_")[0]) - ORDER.indexOf(b.split("_")[0]) || a.localeCompare(b));
-  sel.innerHTML = ids.map(id => { const r = INDEX.runs.find(x => x.run_id === id); return `<option value="${id}">${id} ${SETUP_NAMES[r.setup]} (${r.status})</option>`; }).join("");
+  const runs = [...INDEX.runs].sort((a, b) => (a.group || "").localeCompare(b.group || "") || ORDER.indexOf(a.setup) - ORDER.indexOf(b.setup) || a.repeat - b.repeat);
+  const ids = runs.map(r => r.key || r.run_id);
+  sel.innerHTML = runs.map(r => `<option value="${esc(r.key || r.run_id)}">${GROUP === "__all" ? esc(r.group) + " / " : ""}${r.run_id} ${SETUP_NAMES[r.setup]} (${r.status})</option>`).join("");
   if (ids.includes(cur)) sel.value = cur; else if (ids.length) { sel.value = ids[0]; loadRun(); }
 }
 async function loadRun() {

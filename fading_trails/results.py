@@ -138,12 +138,27 @@ def _status(run_dir):
     return "running" if (run_dir / "log").exists() else "waiting"
 
 
-def export(runs_dir, out_dir, replays=True):
-    runs_dir, out_dir = Path(runs_dir), Path(out_dir)
+def expand_dirs(runs_dirs):
+    """One folder, several folders, or patterns like runs_pilot_* (expanded here, so it
+    works in PowerShell too). Each folder is one group on the page, e.g. one model."""
+    import glob
+    if isinstance(runs_dirs, (str, Path)):
+        runs_dirs = [runs_dirs]
+    out = []
+    for d in runs_dirs:
+        hits = sorted(glob.glob(str(d))) if any(c in str(d) for c in "*?[") else [str(d)]
+        out += [Path(h) for h in hits if Path(h).is_dir()]
+    return out
+
+
+def export(runs_dirs, out_dir, replays=True):
+    dirs, out_dir = expand_dirs(runs_dirs), Path(out_dir)
     (out_dir / "runs").mkdir(parents=True, exist_ok=True)
     shutil.copyfile(VIEWER, out_dir / "index.html")
     index, rows = [], []
-    for p in sorted(x for x in runs_dir.iterdir() if x.is_dir()) if runs_dir.exists() else []:
+    for p in [x for d in dirs for x in sorted(d.iterdir()) if x.is_dir()]:
+        group = p.parent.name
+        key = f"{group}__{p.name}"
         status = _status(p)
         try:
             ev = read_events(p)
@@ -154,20 +169,23 @@ def export(runs_dir, out_dir, replays=True):
         s = ev[0]["settings"]
         days_done = max([e["day"] for e in ev if e["event"] == "day_end"], default=0)
         last = ev[-1]
-        index.append({"run_id": p.name, "setup": s["setup"], "repeat": s["repeat"], "status": status,
+        meta = ev[0].get("meta") or {}
+        index.append({"run_id": p.name, "group": group, "key": key, "model": meta.get("model"), "setup": s["setup"], "repeat": s["repeat"], "status": status,
                       "days_done": days_done, "days": s["days"], "day_now": last["day"], "turn_now": last["turn"],
                       "turns_per_day": s["turns_per_day"], "updated": last["ts"]})
         if status == "done":
-            rows.append(score_run(p))
+            rows.append({**score_run(p), "group": group, "key": key, "model": meta.get("model")})
         if replays:
             rep = run_replay(p)
             if rep:
-                tmp = out_dir / "runs" / f"{p.name}.json.tmp"
+                rep.update(group=group, key=key, model=meta.get("model"))
+                tmp = out_dir / "runs" / f"{key}.json.tmp"
                 tmp.write_text(json.dumps(rep), encoding="utf-8")
-                tmp.replace(out_dir / "runs" / f"{p.name}.json")
+                tmp.replace(out_dir / "runs" / f"{key}.json")
     setups = {k: {"part": v["part"], **{x: v.get(x) for x in ("wiki", "fade", "shown", "planted", "back_room")}}
               for k, v in SETUPS.items()}
-    _write(out_dir / "index.json", {"generated": time.time(), "runs_dir": str(runs_dir.resolve()),
+    _write(out_dir / "index.json", {"generated": time.time(), "runs_dir": ", ".join(str(d) for d in dirs),
+                                    "groups": [d.name for d in dirs],
                                     "runs": index, "setups": setups})
     _write(out_dir / "setups.json", {"rows": rows})
     return len(index)
@@ -181,6 +199,7 @@ def _write(path, obj):
 
 def serve(runs_dir, out_dir, port=8765, every=30, open_browser=True):
     export(runs_dir, out_dir)
+    runs_dir = runs_dir  # list of folders or patterns; re-expanded on every refresh so new folders appear
 
     def loop():
         while True:

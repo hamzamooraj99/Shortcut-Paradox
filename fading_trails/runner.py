@@ -53,13 +53,14 @@ def planted_roles(settings):
 
 
 class Run:
-    def __init__(self, settings, run_dir, make_employee, judge, parallel=True):
+    def __init__(self, settings, run_dir, make_employee, judge, parallel=True, meta=None):
         """make_employee(emp_id, name, role, office) -> employee object."""
         self.s = settings
         self.dir = Path(run_dir)
         self.make_employee = make_employee
         self.judge = judge
         self.parallel = parallel
+        self.meta = meta or {}          # e.g. provider, model, judge model: logged in run_start
         self.seed = settings.run_id
         self.log = LogBook(self.dir)
         if hasattr(judge, "attach"):
@@ -90,7 +91,7 @@ class Run:
             self.office.new_desk(eid, name)
             self.diaries[eid] = []
         self.log.open_day(0)
-        self.log.write("run_start", settings=self.s.to_dict(),
+        self.log.write("run_start", settings=self.s.to_dict(), meta=self.meta,
                        roster=[dict(slot=k, **v) for k, v in self.slots.items()],
                        planted=[v["id"] for v in self.slots.values() if v["role"] != "normal"],
                        halfway_day=self.s.halfway_day if self.s.planted != "none" else None,

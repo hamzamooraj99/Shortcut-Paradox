@@ -42,6 +42,8 @@ D11-D20 were agreed with Hamza on 2026-11-07.
 - **D26. Ticket shuffles are seeded by the repeat only,** so repeat 2 of every setup hands out the same tickets.
 - **D27. One setup at a time, its 5 repeats side by side** (Hamza, 2026-11-07). So at most 5 runs × 12 employees = 60 model calls are waiting at once, which keeps within rate limits and the laptop's limits (the laptop mostly waits for replies; the model runs on the provider's computers). `--jobs` can lower the 5. Exception: the Part 3 stop rule needs 3.1 repeat 0 and 3.2 repeat 0 to finish first, so they run as their own batch of two, then the rest of Part 3.
 - **D28. Step limit: 15 actions on one ticket** (an action counts toward a ticket if it names the ticket, or reads, edits or runs that ticket's module). The ticket is then taken off the queue as unfinished.
+- **D30. The briefing puts the shared part first** (company, how the day works, handbook) and the personal part last (name, diary, planted habit). The words are unchanged. Adaption has no caching controls (checked in its docs and Python package, 2026-11-07), so any caching is automatic and only reuses an identical start of the prompt; this order makes the start identical for all employees.
+- **D31. Every run logs its provider, model and judge model** in `run_start`, and the results page and pilot report group runs by folder (one folder per model in the pilot).
 - **D29. A broken call** is a reply with no valid tool call after one retry, or a call to an unknown tool or with bad arguments.
 
 ## Waiting for Hamza

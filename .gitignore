@@ -226,3 +226,5 @@ results/
 demo_runs/
 demo_results/
 results_*/
+runs_pilot_*.log
+pilot_report.md
