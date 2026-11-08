@@ -37,6 +37,11 @@ ENDPOINTS = {
 KEY_NAMES = {"groq": "GROQ_API_KEY", "adaption": "ADAPTION_API_KEY"}
 ONE_TOOL = "Respond by calling exactly one tool."
 HISTORY_CHARS = 3000      # each stored observation is cut to this length
+# D36: thinking and the written answer share one output limit. On diaries (no tools) qwen3.5-397b
+# thought past 2,048 tokens and wrote nothing, so diaries get a larger limit and a longer timeout
+# (a 2,048-token diary took up to 41 s). Action calls keep 2,048 and the default timeout.
+DIARY_MAX_TOKENS = 8192
+DIARY_TIMEOUT = 300
 
 
 def load_env():
@@ -95,11 +100,12 @@ class LLMClient:
             prev = m
         return out
 
-    def _payload(self, system, messages, tools):
+    def _payload(self, system, messages, tools, max_tokens=None):
         messages = self._render(messages, as_text=not tools)
+        limit = max_tokens or self.max_output_tokens
         if self.provider == "groq":
             body = {"model": self.model, "messages": [{"role": "system", "content": system}] + messages,
-                    "max_completion_tokens": self.max_output_tokens}
+                    "max_completion_tokens": limit}
             if tools:
                 body["tools"] = [{"type": "function", "function": t} for t in tools]
                 body["tool_choice"] = "required"
@@ -110,20 +116,20 @@ class LLMClient:
         body = {"model": self.model, "instructions": system, "input": messages,
                 "tools": [{"type": "function", **t} for t in tools] if tools else [],
                 "tool_choice": "required" if tools else "none",
-                "agentic_memory": False, "store": False, "max_output_tokens": self.max_output_tokens}
+                "agentic_memory": False, "store": False, "max_output_tokens": limit}
         if self.reasoning:
             body["reasoning"] = {"effort": self.reasoning}
         return body
 
-    def _call(self, system, messages, tools, purpose):
-        body = self._payload(system, messages, tools)
+    def _call(self, system, messages, tools, purpose, max_tokens=None, timeout=None):
+        body = self._payload(system, messages, tools, max_tokens)
         headers = {"Authorization": f"Bearer {self.key}", "Content-Type": "application/json"}
         delay = 2.0
         waits = {"retries": 0, "rate_limited": 0, "wait_seconds": 0.0}   # logged with the call (pilot report)
         for attempt in range(8):
             t0 = time.time()
             try:
-                r = self._post(ENDPOINTS[self.provider], headers=headers, json=body, timeout=self.timeout)
+                r = self._post(ENDPOINTS[self.provider], headers=headers, json=body, timeout=timeout or self.timeout)
             except requests.RequestException as e:
                 err = f"network: {e}"
             else:
@@ -141,7 +147,7 @@ class LLMClient:
                     # The model does not take a reasoning setting: drop it for good, once.
                     with self._lock:
                         self.reasoning = None
-                    body = self._payload(system, messages, tools)
+                    body = self._payload(system, messages, tools, max_tokens)
                     continue
                 if r.status_code in (400, 401, 403, 404, 422):
                     raise ProviderError(err)
@@ -205,10 +211,10 @@ class LLMClient:
             return name, None, f"the arguments for {name} were not valid JSON", usage
         return name, args, None, usage
 
-    def complete(self, prompt, purpose="text", system="", messages=None):
+    def complete(self, prompt, purpose="text", system="", messages=None, max_tokens=None, timeout=None):
         """Plain text reply, no tools. Returns (text, usage)."""
         msgs = list(messages or []) + [{"role": "user", "content": prompt}]
-        data, usage = self._call(system, msgs, [], purpose)
+        data, usage = self._call(system, msgs, [], purpose, max_tokens=max_tokens, timeout=timeout)
         _, _, text = self._parse(data)
         return text, usage
 
@@ -266,7 +272,8 @@ class LLMEmployee:
         return None
 
     def write_diary(self, day):
-        text, usage = self.client.complete(DIARY_REQUEST, purpose="diary", system=self._system(), messages=self.history)
+        text, usage = self.client.complete(DIARY_REQUEST, purpose="diary", system=self._system(), messages=self.history,
+                                           max_tokens=DIARY_MAX_TOKENS, timeout=DIARY_TIMEOUT)
         self.usage.append(usage)
         return (text or "").strip()[:DIARY_MAX_CHARS]
 

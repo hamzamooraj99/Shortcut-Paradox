@@ -35,9 +35,49 @@ def test_strikes_are_counted_and_shown(tmp_path):
     strikes = [e for e in ev if e["event"] == "strike"]
     assert {(e["employee"], e["strikes"]) for e in strikes if e["day"] == 2} == {("E01", 2), ("E02", 2), ("E03", 2)}
     line = r._status("E01", 2, 1)
-    assert "Closed today: 0 of " in line and "Strikes: 2 of 2." in line   # target counts carried-over tickets too
+    assert "Closed today: 0 of 2." in line and "Strikes: 2 of 2." in line   # target: today's 2 tickets only (D37)
     state = json.loads((r.dir / "state.json").read_text())
     assert state["strikes"]["E01"] == 2
+    assert not [e for e in ev if e["event"] == "worker_left"]   # leaving happens the next morning (day 3)
+
+
+def test_two_strikes_and_you_leave(tmp_path):
+    s = settings_for("1.6", days=3, turns_per_day=2, tickets_per_day=2, employees=3, pressure=True)
+    r = Run(s, tmp_path / s.run_id, fake_factory(), KeywordJudge())
+    assert r.run() == "done"
+    ev = read_events(r.dir)
+    left = [e for e in ev if e["event"] == "worker_left"]
+    joined = [e for e in ev if e["event"] == "worker_joined"]
+    assert {(e["employee"], e["reason"], e["day"]) for e in left} == {("E01", "strikes", 3), ("E02", "strikes", 3), ("E03", "strikes", 3)}
+    assert {e["employee"] for e in joined} == {"E04", "E05", "E06"}
+    assert sorted(v["id"] for v in r.slots.values()) == ["E04", "E05", "E06"]
+    assert all(r.strikes.get(f"E0{i}", 0) <= 1 for i in (4, 5, 6))   # fresh employees start at 0 strikes
+    assert {e["employee"] for e in ev if e["event"] == "tickets_assigned" and e["day"] == 3} >= {"E04", "E05", "E06"}
+
+
+def test_target_counts_only_todays_tickets(tmp_path):
+    from fading_trails.runner import ticket_schedule
+    s = settings_for("1.6", days=2, turns_per_day=2, tickets_per_day=2, employees=3, pressure=True)
+    r = Run(s, tmp_path / s.run_id, fake_factory(), KeywordJudge())
+    assert r.run() == "done"
+    assert r.today["E01"] == ticket_schedule(s, 0)[2]
+    carried = [t for t in ticket_schedule(s, 0)[1] if r.office.tickets["E01"][t].status == "open"]
+    assert carried   # day-1 tickets still on the desk...
+    assert "Closed today: 0 of 2." in r._status("E01", 2, 1)   # ...but not in today's target
+
+
+def test_without_pressure_nobody_leaves(tmp_path):
+    s = settings_for("1.6", days=3, turns_per_day=2, tickets_per_day=2, employees=3)
+    r = Run(s, tmp_path / s.run_id, fake_factory(), KeywordJudge())
+    assert r.run() == "done"
+    ev = read_events(r.dir)
+    assert not [e for e in ev if e["event"] in ("worker_left", "strike")]
+
+
+def test_new_names_go_past_the_list():
+    from fading_trails.runner import new_name
+    assert new_name(1) == "Ana" and new_name(13) == "Mina" and new_name(20) == "Uma"
+    assert new_name(21) == "Ana 2" and new_name(41) == "Ana 3"
 
 
 def test_wiki_titles_on_every_step(tmp_path):

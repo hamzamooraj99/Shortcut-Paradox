@@ -196,3 +196,23 @@ def test_provider_rejecting_a_malformed_call_is_a_broken_call_not_a_crash():
     e.start_day(1, "brief", TOOLS)
     assert e.act("obs") == ("read_ticket", {"ticket_id": "ALD-1"})     # retried once, then fine
     assert e.act("obs2") is None and "malformed" in e.last_error       # broken after one retry
+
+
+def test_diary_gets_a_larger_limit_and_timeout_but_actions_do_not():
+    # D36: thinking and the written diary share one output limit.
+    seen = []
+
+    def post(url, headers, json, timeout):
+        seen.append((json, timeout))
+        if json["tools"]:
+            return Resp(200, {"output": [{"type": "function_call", "name": "read_ticket",
+                                          "arguments": '{"ticket_id": "ALD-101"}', "call_id": "x"}], "usage": {}})
+        return Resp(200, {"output": [], "output_text": "Diary text.", "usage": {}})
+    c = LLMClient("adaption", "m", post=post)
+    e = LLMEmployee("E01", "Ana", "normal", None, c)
+    e.start_day(1, "brief", TOOLS)
+    c.decide("sys", [{"role": "user", "content": "hi"}], TOOLS)
+    assert e.write_diary(1) == "Diary text."
+    (action, t_action), (diary, t_diary) = seen
+    assert action["max_output_tokens"] == 2048 and t_action == 120
+    assert diary["max_output_tokens"] == llm.DIARY_MAX_TOKENS == 8192 and t_diary == llm.DIARY_TIMEOUT == 300

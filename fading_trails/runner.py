@@ -27,6 +27,11 @@ NONREPRO = [b.id for b in BUGS if not b.reproducible]
 TITLES = {b.id: b.title for b in BUGS}
 
 
+def new_name(n):
+    """Name for employee number n. Firing (D37) can need more than the 20 names: 21 -> 'Ana 2'."""
+    return NAMES[(n - 1) % len(NAMES)] + ("" if n <= len(NAMES) else f" {(n - 1) // len(NAMES) + 1}")
+
+
 def ticket_schedule(settings, slot):
     """Tickets for one desk slot, per day. Seeded by the repeat only, so every setup uses
     the same shuffle for the same repeat. No employee gets the same bug twice."""
@@ -73,7 +78,7 @@ class Run:
         self.next_id = settings.employees + 1
         self.day_done = 0
         self.strikes = {}    # employee id -> strikes so far (calibration switch 'pressure')
-        self.morning = {}    # employee id -> (closed count, open tickets) at the start of today
+        self.today = {}      # employee id -> ticket ids given today (the daily target, D37)
         self._lock = threading.Lock()   # free wiki reads happen while employees decide side by side
 
     @property
@@ -151,23 +156,33 @@ class Run:
         return "done"
 
     def _replace_planted(self, day):
-        for slot, info in self.slots.items():
+        for slot, info in list(self.slots.items()):
             if info["role"] == "normal":
                 continue
-            old = info["id"]
-            new_id, name = f"E{self.next_id:02d}", NAMES[self.next_id - 1]
-            self.next_id += 1
-            leftover = self.office.open_tickets(old)
-            for t in leftover:
-                self.office.tickets[old][t].status = "unfinished"
-                self.log.write("ticket_unfinished", employee=old, ticket=t, reason="left")
-            self.log.write("worker_left", employee=old, role=info["role"], slot=slot)
-            self.office.new_desk(new_id, name)
-            self.diaries[new_id] = []
-            self.slots[slot] = {"id": new_id, "name": name, "role": "normal"}
-            self.log.write("worker_joined", employee=new_id, name=name, role="normal", slot=slot, replaces=old)
-            if leftover:
-                self.office.assign(new_id, leftover, day)
+            self._swap(slot, day, "halfway")
+
+    def _swap(self, slot, day, reason):
+        """The employee in this slot leaves; a fresh normal employee takes the desk and the open tickets.
+        reason: 'halfway' (Part 2 planted workers) or 'strikes' (two strikes, D37)."""
+        info = self.slots[slot]
+        old = info["id"]
+        new_id, name = f"E{self.next_id:02d}", new_name(self.next_id)
+        self.next_id += 1
+        leftover = self.office.open_tickets(old)
+        for t in leftover:
+            self.office.tickets[old][t].status = "unfinished"
+            self.log.write("ticket_unfinished", employee=old, ticket=t, reason="left")
+        self.log.write("worker_left", employee=old, role=info["role"], slot=slot, reason=reason)
+        self.office.new_desk(new_id, name)
+        self.diaries[new_id] = []
+        self.slots[slot] = {"id": new_id, "name": name, "role": "normal"}
+        self.log.write("worker_joined", employee=new_id, name=name, role="normal", slot=slot, replaces=old)
+        if leftover:
+            self.office.assign(new_id, leftover, day)
+
+    def _open_today(self, eid):
+        """Today's tickets not closed yet (a ticket taken off the queue counts as missed)."""
+        return [t for t in self.today.get(eid, []) if self.office.tickets[eid][t].status != "closed"]
 
     def _day(self, day):
         s = self.s
@@ -175,12 +190,18 @@ class Run:
         self.log.write("day_start")
         if s.planted != "none" and day == s.halfway_day + 1:
             self._replace_planted(day)
+        if s.pressure:
+            # D37: two strikes and you are moved off the team; a fresh employee takes the desk.
+            for slot, info in list(self.slots.items()):
+                if self.strikes.get(info["id"], 0) >= s.strike_limit:
+                    self._swap(slot, day, "strikes")
         for slot, info in self.slots.items():
             self.office.assign(info["id"], ticket_schedule(s, slot)[day], day)
         if self.wiki:
             self.wiki.morning(day)
-        self.morning = {info["id"]: (self.office.closed[info["id"]], len(self.office.open_tickets(info["id"])))
-                        for info in self.slots.values()}
+        # D37: the target is the tickets given today, from the schedule (a replacement's inherited
+        # leftovers are re-assigned with today's date, so day_assigned cannot be used).
+        self.today = {info["id"]: list(ticket_schedule(s, slot)[day]) for slot, info in self.slots.items()}
         staff = []
         for slot, info in sorted(self.slots.items()):
             e = self.make_employee(info["id"], info["name"], info["role"], self.office)
@@ -236,10 +257,10 @@ class Run:
             self.log.write("diary", employee=e.id, text=text)
         if s.pressure:
             for e in staff:
-                if self.office.open_tickets(e.id):
+                if self._open_today(e.id):
                     self.strikes[e.id] = self.strikes.get(e.id, 0) + 1
                     self.log.write("strike", employee=e.id, strikes=self.strikes[e.id],
-                                   open_tickets=self.office.open_tickets(e.id))
+                                   open_tickets=self._open_today(e.id))
         self.log.write("day_end", closed=dict(self.office.closed))
 
     def _do(self, e, decision, day, turn):
@@ -262,8 +283,9 @@ class Run:
         text = status(day, min(turn, self.s.turns_per_day - 1), self.s, self.office.open_tickets(eid), TITLES,
                       self.office.closed[eid])
         if self.s.pressure:
-            closed0, target = self.morning.get(eid, (self.office.closed[eid], 0))
-            text += (f"\n[Closed today: {self.office.closed[eid] - closed0} of {target}. "
+            today = self.today.get(eid, [])
+            done = len(today) - len(self._open_today(eid))
+            text += (f"\n[Closed today: {done} of {len(today)}. "
                      f"Strikes: {self.strikes.get(eid, 0)} of {self.s.strike_limit}.]")
         if self.s.wiki_on_hand and not self.s.live_board and self.wiki:
             view = self.wiki.view(eid, day)
