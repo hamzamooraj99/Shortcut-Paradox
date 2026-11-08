@@ -42,6 +42,7 @@ HISTORY_CHARS = 3000      # each stored observation is cut to this length
 # (a 2,048-token diary took up to 41 s). Action calls keep 2,048 and the default timeout.
 DIARY_MAX_TOKENS = 8192
 DIARY_TIMEOUT = 300
+RATE_LIMIT_PATIENCE_SECONDS = 1800   # wait out "rate limit reached" replies for up to 30 minutes (Hamza, 2026-11-09)
 
 
 def load_env():
@@ -126,7 +127,9 @@ class LLMClient:
         headers = {"Authorization": f"Bearer {self.key}", "Content-Type": "application/json"}
         delay = 2.0
         waits = {"retries": 0, "rate_limited": 0, "wait_seconds": 0.0}   # logged with the call (pilot report)
-        for attempt in range(8):
+        limited = 0.0   # seconds spent waiting out rate-limit replies (Hamza, 2026-11-09: wait, do not crash)
+        attempt = 0
+        while attempt < 8:
             t0 = time.time()
             try:
                 r = self._post(ENDPOINTS[self.provider], headers=headers, json=body, timeout=timeout or self.timeout)
@@ -151,6 +154,16 @@ class LLMClient:
                     continue
                 if r.status_code in (400, 401, 403, 404, 422):
                     raise ProviderError(err)
+                if r.status_code == 429 and limited < RATE_LIMIT_PATIENCE_SECONDS:
+                    # The provider asks us to retry after 60 seconds: wait it out (up to the patience limit)
+                    # without using up one of the 8 attempts. Only the waiting changes, not what employees see.
+                    pause = 60 + 5 * random.random()
+                    limited += pause
+                    waits["retries"] += 1
+                    waits["wait_seconds"] = round(waits["wait_seconds"] + (time.time() - t0) + pause, 1)
+                    time.sleep(pause)
+                    continue
+            attempt += 1
             pause = delay + random.random()
             waits["retries"] += 1
             waits["wait_seconds"] = round(waits["wait_seconds"] + (time.time() - t0) + pause, 1)

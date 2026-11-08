@@ -159,6 +159,19 @@ def test_rate_limits_are_counted_in_usage():
     assert usage["rate_limited"] == 1 and usage["retries"] == 1
 
 
+def test_long_rate_limits_are_waited_out():
+    # 20 rate-limit replies in a row (about 20 minutes) no longer use up the 8 attempts (Hamza, 2026-11-09).
+    replies = [Resp(429, {"error": "retry after 60 seconds"})] * 20 + [groq_tool("read_ticket", {"ticket_id": "ALD-1"})]
+    usage = LLMClient("groq", "m", post=Recorder(replies)).decide("s", [], TOOLS)[3]
+    assert usage["rate_limited"] == 20
+
+
+def test_rate_limit_patience_runs_out():
+    replies = [Resp(429, {"error": "retry after 60 seconds"})] * 60
+    with pytest.raises(llm.ProviderError):
+        LLMClient("groq", "m", post=Recorder(replies)).decide("s", [], TOOLS)
+
+
 def scripted_model(body):
     """A stand-in model: works each ticket honestly (reproduce, then close as can't-reproduce)."""
     if not body.get("tools"):
