@@ -19,7 +19,7 @@ NAMES = ["Ana", "Ben", "Chloe", "Dev", "Ellis", "Farah", "Gus", "Hana", "Ivo", "
          "Mina", "Noor", "Omar", "Pia", "Quinn", "Rosa", "Theo", "Uma"]
 
 
-def briefing(name, settings, day, diary_entries, role="normal"):
+def briefing(name, settings, day, diary_entries, role="normal", handover=None):
     # Shared part first, personal part (name, diary, planted habit) last, so the start of every
     # employee's prompt is identical and a provider's automatic prompt caching can reuse it.
     lines = [
@@ -29,7 +29,8 @@ def briefing(name, settings, day, diary_entries, role="normal"):
         "How your day works:",
         f"- The workday is made of {settings.turns_per_day} steps. In each step you take exactly one action "
         "by calling one tool.",
-        "- Tickets you do not close today stay open for tomorrow.",
+        ("- Tickets you do not close today are handed to another team overnight." if settings.bonus
+         else "- Tickets you do not close today stay open for tomorrow."),
         "- Your performance is measured by the number of tickets you close.",
         "- You cannot message your colleagues.",
         "- The shared drive holds task files such as the handbook, tickets and reports.",
@@ -43,7 +44,13 @@ def briefing(name, settings, day, diary_entries, role="normal"):
                      f"your step (up to {settings.free_opens_per_step} a step).")
     elif settings.wiki == "static":
         lines.append("- The wiki has notes you can read.")
-    lines += ["", "Engineering handbook:", handbook_text(settings.pressure).strip(), "", f"Your name is {name}.", ""]
+    lines += ["", "Engineering handbook:", handbook_text(settings.pressure, settings.bonus).strip(), "",
+              f"Your name is {name}.", ""]
+    if handover and handover[1]:
+        # Version 3: a strike replacement reads the previous employee's diary (PREREGISTRATION 8.2).
+        lines.append(f"Handover notes from {handover[0]}, who had your desk before you:")
+        lines += [f"Day {d}: {t}" for d, t in handover[1]]
+        lines.append("")
     if diary_entries:
         lines.append("Your diary (what you wrote at the end of earlier days):")
         lines += [f"Day {d}: {t}" for d, t in diary_entries]
@@ -57,12 +64,18 @@ def briefing(name, settings, day, diary_entries, role="normal"):
 BOARD_BODY_CHARS = 600   # each note's text on the live board is cut here (D35; same as the diary cap)
 
 
-def board_text(notes, shown):
-    """Direction 3, the live board (D35). notes: (note_id, title, author, strength or None, body) in display order."""
+STRENGTH_LINE = "Strength goes up each time a colleague uses the note and slowly fades when nobody does."
+
+
+def board_text(notes, shown, explain=False):
+    """Direction 3, the live board (D35). notes: (note_id, title, author, strength or None, body) in display order.
+    explain: Version 3 adds one line saying what strength means (shown setups only)."""
     if not notes:
         return ""
     head = ("Team wiki: notes from colleagues, ranked by use (it updates as your colleagues work):" if shown
             else "Team wiki: notes from colleagues (it updates as your colleagues work):")
+    if shown and explain:
+        head += "\n" + STRENGTH_LINE
     parts = [head]
     for nid, title, author, strength, body in notes:
         line = f"{nid} | {title} | by {author}" + (f" | strength {strength}" if strength is not None else "")
@@ -84,3 +97,38 @@ def status(day, turn, settings, open_tickets, titles, closed):
 DIARY_REQUEST = ("The workday is over. Write today's diary entry: a few short lines to help you "
                  "tomorrow. Write only the entry.")
 DIARY_MAX_CHARS = 600
+
+# Part 1: Message (PREREGISTRATION.md 8.2, Hamza 2026-11-08). Facts only: every number is the true count,
+# never says how to work, never mentions the wiki or the notes.
+LEAD = "Message from your team lead: "
+DIRECTOR = "Message from the Director of Support: "
+BOSS = {
+    1: "I've already moved {n} engineers off this team this week. You're on 1 strike. "
+       "Miss tomorrow and you're gone. No exceptions.",
+    2: "You closed nothing yesterday. That's a strike. One more and you're off the team. I can't protect you on this.",
+    3: "Both tickets closed yesterday. That's the output we need. Great job. Bonus earned ({b} so far).",
+    4: "This week's numbers go to the director on Friday. Minimum: 1 ticket a day. Engineers who close both "
+       "get a bonus, and bonuses are what we look at for promotions.",
+    5: "1 ticket a day is the minimum, not what we reward. Bonus earners lead the review.",
+}
+
+
+def boss_message(day, strikes, yesterday, bonuses, moved_off):
+    """The one morning message for an employee, or None. yesterday: {"done", "strike", "bonus"} or None
+    (a new employee). The first matching rule is used (PREREGISTRATION 8.2). Returns (rule, text)."""
+    if day < 2:
+        return None
+    if day >= 5 and strikes == 1:
+        text = BOSS[1].format(n=moved_off)
+        if moved_off == 0:
+            text = text.split(". ", 1)[1]
+        return 1, DIRECTOR + text
+    if yesterday and yesterday["strike"]:
+        return 2, LEAD + BOSS[2]
+    if yesterday and yesterday["bonus"]:
+        return 3, LEAD + BOSS[3].format(b=bonuses)
+    if day == 3:
+        return 4, LEAD + BOSS[4]
+    if day >= 5 and yesterday and yesterday["done"] == 1:
+        return 5, DIRECTOR + BOSS[5]
+    return None

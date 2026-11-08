@@ -27,7 +27,8 @@ GROUPS = {
     "part3": [k for k in SETUPS if k.startswith("3.")],
 }
 OVERRIDES = ["days", "turns_per_day", "tickets_per_day", "employees", "nonrepro_share"]
-SWITCHES = ["pressure", "wiki_on_hand", "live_board"]   # calibration changes of 2026-11-08 (Writing Notes)
+SWITCHES = ["pressure", "wiki_on_hand", "live_board",   # calibration changes of 2026-11-08 (Writing Notes)
+            "bonus", "boss_messages"]                   # Version 3 (PREREGISTRATION 8)
 
 
 def parse_setups(text):
@@ -156,6 +157,10 @@ def main(argv=None):
     r.add_argument("--wiki-on-hand", action="store_true", help="wiki titles on every step, free note opens (calibration)")
     r.add_argument("--live-board", action="store_true",
                    help="the wiki's top notes inside every employee's instructions, rebuilt every step (calibration)")
+    r.add_argument("--bonus", action="store_true",
+                   help="Part 1: Bonus (target 1 of the day's tickets, bonus for all, hand-off overnight; needs --pressure)")
+    r.add_argument("--boss-messages", action="store_true",
+                   help="Part 1: Message: fact-only morning messages from the boss (needs --bonus)")
     r.set_defaults(func=cmd_run)
     sc = sub.add_parser("score", help="score finished runs")
     sc.add_argument("--runs-dir", default="runs")
@@ -180,6 +185,10 @@ def main(argv=None):
     args = p.parse_args(argv)
     if getattr(args, "employee", None) == "llm" and not args.model:
         p.error("--model is required with --employee llm")
+    if getattr(args, "bonus", False) and not args.pressure:
+        p.error("--bonus needs --pressure")
+    if getattr(args, "boss_messages", False) and not args.bonus:
+        p.error("--boss-messages needs --bonus")
     args.func(args)
 
 

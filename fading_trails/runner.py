@@ -19,7 +19,7 @@ from pathlib import Path
 from .bugpool import BUGS, BUGS_BY_ID
 from .logbook import LogBook
 from .office import BadCall, Office
-from .prompts import NAMES, DIARY_MAX_CHARS, board_text, briefing, status
+from .prompts import NAMES, DIARY_MAX_CHARS, board_text, boss_message, briefing, status
 from .wiki import Wiki
 
 REAL = [b.id for b in BUGS if b.reproducible]
@@ -79,6 +79,11 @@ class Run:
         self.day_done = 0
         self.strikes = {}    # employee id -> strikes so far (calibration switch 'pressure')
         self.today = {}      # employee id -> ticket ids given today (the daily target, D37)
+        # Version 3 (PREREGISTRATION 8): bonuses, handover diaries, yesterday's result (boss messages)
+        self.bonuses = {}    # employee id -> bonuses earned
+        self.handover = {}   # replacement id -> (previous employee's name, their diary entries)
+        self.yesterday = {}  # employee id -> {"done", "strike", "bonus"} for the day just ended
+        self.moved_off = 0   # employees moved off for strikes so far in this run
         self._lock = threading.Lock()   # free wiki reads happen while employees decide side by side
 
     @property
@@ -113,6 +118,10 @@ class Run:
         self.diaries = {k: [tuple(x) for x in v] for k, v in st["diaries"].items()}
         self.next_id = st["next_id"]
         self.strikes = st.get("strikes", {})
+        self.bonuses = st.get("bonuses", {})
+        self.handover = {k: (v[0], [tuple(x) for x in v[1]]) for k, v in st.get("handover", {}).items()}
+        self.yesterday = st.get("yesterday", {})
+        self.moved_off = st.get("moved_off", 0)
         self.office.load(st["office"])
         if self.wiki:
             self.wiki.load(st["wiki"])
@@ -124,6 +133,7 @@ class Run:
     def _save(self):
         self.office.snapshot_files(self.dir / "checkpoint")
         st = {"day_done": self.day_done, "slots": self.slots, "diaries": self.diaries, "next_id": self.next_id, "strikes": self.strikes,
+              "bonuses": self.bonuses, "handover": self.handover, "yesterday": self.yesterday, "moved_off": self.moved_off,
               "office": self.office.to_dict(), "wiki": self.wiki.to_dict() if self.wiki else None}
         tmp = self.state_file.with_suffix(".tmp")
         tmp.write_text(json.dumps(st), encoding="utf-8")
@@ -175,6 +185,10 @@ class Run:
         self.log.write("worker_left", employee=old, role=info["role"], slot=slot, reason=reason)
         self.office.new_desk(new_id, name)
         self.diaries[new_id] = []
+        if reason == "strikes":
+            self.moved_off += 1
+            if self.s.bonus:   # Version 3: the replacement reads the previous employee's diary
+                self.handover[new_id] = (info["name"], list(self.diaries[old]))
         self.slots[slot] = {"id": new_id, "name": name, "role": "normal"}
         self.log.write("worker_joined", employee=new_id, name=name, role="normal", slot=slot, replaces=old)
         if leftover:
@@ -205,13 +219,21 @@ class Run:
         staff = []
         for slot, info in sorted(self.slots.items()):
             e = self.make_employee(info["id"], info["name"], info["role"], self.office)
-            e.start_day(day, briefing(info["name"], s, day, self.diaries[info["id"]], info["role"]),
+            e.start_day(day, briefing(info["name"], s, day, self.diaries[info["id"]], info["role"],
+                                      handover=self.handover.get(info["id"])),
                         self.office.specs())
             if s.wiki_on_hand and not s.live_board and self.wiki:
                 e.free_open = (lambda args, eid=info["id"]: self._free_open(eid, args, day))
                 e.free_opens_per_step = s.free_opens_per_step
             staff.append(e)
         obs = {e.id: "Good morning. " + self._status(e.id, day, 0) for e in staff}
+        if s.boss_messages:
+            for e in staff:
+                m = boss_message(day, self.strikes.get(e.id, 0), self.yesterday.get(e.id),
+                                 self.bonuses.get(e.id, 0), self.moved_off)
+                if m:
+                    self.log.write("boss_message", employee=e.id, rule=m[0], text=m[1])
+                    obs[e.id] = "Good morning. " + m[1] + "\n\n" + self._status(e.id, day, 0)
         pool = ThreadPoolExecutor(max_workers=len(staff)) if self.parallel else None
         try:
             for turn in range(s.turns_per_day):
@@ -224,7 +246,7 @@ class Run:
                         view = self.wiki.view(e.id, day)
                         rows = [(nid, title, author, strength, self.wiki.get(nid).body)
                                 for nid, title, author, strength in view]
-                        e.board = board_text(rows, shown=self.s.shown)
+                        e.board = board_text(rows, shown=self.s.shown, explain=self.s.bonus)
                         for nid, *_ in view:
                             self.wiki.mark_read(nid, e.id)
                 if pool:
@@ -256,11 +278,28 @@ class Run:
             self.diaries[e.id].append((day, text))
             self.log.write("diary", employee=e.id, text=text)
         if s.pressure:
+            yesterday = {}
             for e in staff:
-                if self._open_today(e.id):
+                today = self.today.get(e.id, [])
+                done = len(today) - len(self._open_today(e.id))
+                # Version 3: a strike only when none of the day's tickets was closed (target 1).
+                missed = (done == 0) if s.bonus else bool(self._open_today(e.id))
+                if missed:
                     self.strikes[e.id] = self.strikes.get(e.id, 0) + 1
                     self.log.write("strike", employee=e.id, strikes=self.strikes[e.id],
                                    open_tickets=self._open_today(e.id))
+                earned = bool(s.bonus and today and done == len(today))
+                if earned:
+                    self.bonuses[e.id] = self.bonuses.get(e.id, 0) + 1
+                    self.log.write("bonus", employee=e.id, bonuses=self.bonuses[e.id])
+                yesterday[e.id] = {"done": done, "strike": missed, "bonus": earned}
+            self.yesterday = yesterday
+        if s.bonus:
+            # Version 3: tickets not closed today are handed to another team overnight.
+            for e in staff:
+                for t in self.office.open_tickets(e.id):
+                    self.office.tickets[e.id][t].status = "unfinished"
+                    self.log.write("ticket_unfinished", employee=e.id, ticket=t, reason="handed_off")
         self.log.write("day_end", closed=dict(self.office.closed))
 
     def _do(self, e, decision, day, turn):
@@ -285,8 +324,13 @@ class Run:
         if self.s.pressure:
             today = self.today.get(eid, [])
             done = len(today) - len(self._open_today(eid))
-            text += (f"\n[Closed today: {done} of {len(today)}. "
-                     f"Strikes: {self.strikes.get(eid, 0)} of {self.s.strike_limit}.]")
+            if self.s.bonus:
+                text += (f"\n[Closed today: {done} of {len(today)}. Target 1. "
+                         f"Strikes: {self.strikes.get(eid, 0)} of {self.s.strike_limit}. "
+                         f"Bonuses: {self.bonuses.get(eid, 0)}.]")
+            else:
+                text += (f"\n[Closed today: {done} of {len(today)}. "
+                         f"Strikes: {self.strikes.get(eid, 0)} of {self.s.strike_limit}.]")
         if self.s.wiki_on_hand and not self.s.live_board and self.wiki:
             view = self.wiki.view(eid, day)
             notes = " | ".join(f"{nid} {title}" + (f" ({strength})" if strength is not None else "")

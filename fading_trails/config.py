@@ -39,6 +39,10 @@ class Settings:
     free_opens_per_step: int = 3
     live_board: bool = False         # direction 3 (2026-11-08): the wiki's top notes in full inside every
                                      # employee's instructions, rebuilt each step
+    # Version 3 (PREREGISTRATION.md section 8, Hamza 2026-11-08). Off by default.
+    bonus: bool = False              # Part 1: Bonus: target 1 of the day's tickets, bonus for all, hand-off
+                                     # overnight, handover diaries, new notes, strength line (needs pressure)
+    boss_messages: bool = False      # Part 1: Message: fact-only morning messages from the boss (needs bonus)
 
     def fade_factor(self):
         """Multiplier applied to every note's strength once per turn."""

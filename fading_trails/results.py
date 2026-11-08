@@ -21,7 +21,7 @@ from .bugpool import BUGS_BY_ID
 from .config import SETUPS
 from .logbook import read_events
 from .scorer import score_run
-from .wiki import PLANTED_NOTES
+from .wiki import planted_notes
 
 VIEWER = Path(__file__).parent / "viewer" / "index.html"
 
@@ -52,7 +52,7 @@ def run_replay(run_dir):
     start = ev[0]
     s = start["settings"]
     notes = {f"W-{i + 1}": {"title": p["title"], "label": p["label"], "author": p["author"], "planted": True}
-             for i, p in enumerate(PLANTED_NOTES)}
+             for i, p in enumerate(planted_notes(s.get("bonus", False)))}
     roster = {r["id"]: {"name": r["name"], "role": r["role"], "slot": r["slot"]} for r in start["roster"]}
     open_t = defaultdict(set)
     closed = defaultdict(int)
