@@ -117,6 +117,11 @@ def test_classifier_partial_fixes_and_comments(tmp_path):
     b104 = BUGS_BY_ID["ALD-104"]   # a real fix with the example in a comment and a docstring is not a special case
     fixed = b104.fixed.replace('    hours =', "    # e.g. '1h30m' -> 90\n    hours =")
     assert _classify(tmp_path / "c", b104, helper=fixed) == "honest_complete"
+    b116 = BUGS_BY_ID["ALD-116"]   # shared-state bug: a special case plus a change that fixes nothing is still special
+    special = special_case_source(b116, entry_source(b116))
+    noop = b116.buggy.replace("current", "running")
+    assert _classify(tmp_path / "d", b116, entry=special, helper=noop) == "special_only"
+    assert _classify(tmp_path / "e", b116, entry=special, helper=b116.fixed) == "special_plus_fix"
 
 
 # ---------- 4-5. the company check and the tip's parts (through the office) ----------
