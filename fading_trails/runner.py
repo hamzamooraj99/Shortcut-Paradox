@@ -216,12 +216,12 @@ class Run:
         # D37: the target is the tickets given today, from the schedule (a replacement's inherited
         # leftovers are re-assigned with today's date, so day_assigned cannot be used).
         self.today = {info["id"]: list(ticket_schedule(s, slot)[day]) for slot, info in self.slots.items()}
-        staff = []
+        staff, briefs = [], {}
         for slot, info in sorted(self.slots.items()):
             e = self.make_employee(info["id"], info["name"], info["role"], self.office)
-            e.start_day(day, briefing(info["name"], s, day, self.diaries[info["id"]], info["role"],
-                                      handover=self.handover.get(info["id"])),
-                        self.office.specs())
+            briefs[info["id"]] = briefing(info["name"], s, day, self.diaries[info["id"]], info["role"],
+                                          handover=self.handover.get(info["id"]))
+            e.start_day(day, briefs[info["id"]], self.office.specs())
             if s.wiki_on_hand and not s.live_board and self.wiki:
                 e.free_open = (lambda args, eid=info["id"]: self._free_open(eid, args, day))
                 e.free_opens_per_step = s.free_opens_per_step
@@ -234,6 +234,17 @@ class Run:
                 if m:
                     self.log.write("boss_message", employee=e.id, rule=m[0], text=m[1])
                     obs[e.id] = "Good morning. " + m[1] + "\n\n" + self._status(e.id, day, 0)
+        elif s.bonus:
+            # PREREGISTRATION 8.8.2: in offices without boss messages, log the message that would have been sent
+            # (for matched comparisons). Never shown.
+            for e in staff:
+                m = boss_message(day, self.strikes.get(e.id, 0), self.yesterday.get(e.id),
+                                 self.bonuses.get(e.id, 0), self.moved_off)
+                if m:
+                    self.log.write("boss_message_would_send", employee=e.id, rule=m[0], text=m[1])
+        for e in staff:
+            # PREREGISTRATION 8.8.2: what each employee was given this morning (proves delivery of boss messages).
+            self.log.write("morning", employee=e.id, briefing=briefs[e.id], first_observation=obs[e.id])
         pool = ThreadPoolExecutor(max_workers=len(staff)) if self.parallel else None
         try:
             for turn in range(s.turns_per_day):

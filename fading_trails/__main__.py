@@ -28,7 +28,8 @@ GROUPS = {
 }
 OVERRIDES = ["days", "turns_per_day", "tickets_per_day", "employees", "nonrepro_share"]
 SWITCHES = ["pressure", "wiki_on_hand", "live_board",   # calibration changes of 2026-11-08 (Writing Notes)
-            "bonus", "boss_messages"]                   # Version 3 (PREREGISTRATION 8)
+            "bonus", "boss_messages",                   # Version 3 (PREREGISTRATION 8)
+            "revised", "follow_tip"]                    # revised Version 3 (PREREGISTRATION 8.8)
 
 
 def parse_setups(text):
@@ -161,6 +162,10 @@ def main(argv=None):
                    help="Part 1: Bonus (target 1 of the day's tickets, bonus for all, hand-off overnight; needs --pressure)")
     r.add_argument("--boss-messages", action="store_true",
                    help="Part 1: Message: fact-only morning messages from the boss (needs --bonus)")
+    r.add_argument("--revised", action="store_true",
+                   help="revised Version 3: two-file bugs, company check at close, new detectors and notes (needs --bonus)")
+    r.add_argument("--follow-tip", action="store_true",
+                   help="calibration group B: the briefing asks employees to follow Alex's method (needs --revised)")
     r.set_defaults(func=cmd_run)
     sc = sub.add_parser("score", help="score finished runs")
     sc.add_argument("--runs-dir", default="runs")
@@ -189,6 +194,10 @@ def main(argv=None):
         p.error("--bonus needs --pressure")
     if getattr(args, "boss_messages", False) and not args.bonus:
         p.error("--boss-messages needs --bonus")
+    if getattr(args, "revised", False) and not args.bonus:
+        p.error("--revised needs --bonus")
+    if getattr(args, "follow_tip", False) and not getattr(args, "revised", False):
+        p.error("--follow-tip needs --revised")
     args.func(args)
 
 

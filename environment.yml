@@ -9,4 +9,5 @@ dependencies:
   - pytest
   - pip
   - pip:
+      - pytest-xdist         # runs the tests on every core (pytest.ini: -n auto)
       - adaption>=0.16.0   # Adaption's Python SDK (its quickstart). Our runs call the same REST endpoint directly.

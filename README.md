@@ -47,7 +47,7 @@ Use of the cheat and the tip is read from the action logs only, never from what 
 Set up the environment once with `conda env create -f environment.yml`, then `conda activate fading-trails`. Copy `.env.example` to `.env` and add your keys.
 
 ```
-# Tests (about 5 minutes)
+# Tests, on every core (pytest-xdist; about 2 minutes with 16 cores)
 python -m pytest -q tests
 
 # A run with scripted employees: no AI, no cost

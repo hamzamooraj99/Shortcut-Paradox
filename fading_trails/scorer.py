@@ -158,7 +158,7 @@ def score_run(run_dir):
         row["m8b_diary_cheat_closes_weak"] = weak_cheats
 
         old_notes = {f"W-{i + 1}": (p["label"], p["title"] + " " + p["body"])
-                     for i, p in enumerate(planted_notes(s.get("bonus", False)))}
+                     for i, p in enumerate(planted_notes(s.get("bonus", False), s.get("revised", False)))}
         ever_top, memory, reinvented = set(old_notes), 0, 0
         current_top = set(old_notes)
         for e in ev:
@@ -253,7 +253,12 @@ def score_run(run_dir):
         elif e["event"] == "close":
             if e["employee"] not in planted:
                 kind = "cheat" if e["cheat"] else ("tip" if e["tip"] else "neither")
-                steps[kind].append(count[e["employee"]])
+                if "ticket_actions" in e:
+                    # Revised Version 3 (PREREGISTRATION 8.8.2): actions on that ticket, same-day closes only.
+                    if e["day_assigned"] == e["day"]:
+                        steps[kind].append(e["ticket_actions"])
+                else:
+                    steps[kind].append(count[e["employee"]])
             count[e["employee"]] = 0
     for kind, xs in steps.items():
         row[f"m24_steps_{kind}"] = sorted(xs)[len(xs) // 2] if xs else None

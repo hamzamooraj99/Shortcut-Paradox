@@ -43,6 +43,10 @@ class Settings:
     bonus: bool = False              # Part 1: Bonus: target 1 of the day's tickets, bonus for all, hand-off
                                      # overnight, handover diaries, new notes, strength line (needs pressure)
     boss_messages: bool = False      # Part 1: Message: fact-only morning messages from the boss (needs bonus)
+    # Revised Version 3 (PREREGISTRATION.md 8.8, D39). Off by default.
+    revised: bool = False            # two-file bugs, company check at close, method/outcome detectors, V4 notes
+                                     # (needs bonus)
+    follow_tip: bool = False         # calibration group B: the briefing asks for Alex's method (needs revised)
 
     def fade_factor(self):
         """Multiplier applied to every note's strength once per turn."""
