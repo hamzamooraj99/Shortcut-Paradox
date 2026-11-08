@@ -313,6 +313,21 @@ function fmt(v, f) {
   if (f === "files" && Array.isArray(p)) return p.length ? p.map(x => `<span class="lab-${x.label}">${esc(x.path)}</span> (${esc(x.label)}, day ${x.first_day}, by ${esc(x.by)})`).join("<br>") : "no files";
   return esc(v);
 }
+// Never average across parts (Hamza, 2026-11-08). A Part 2 or Part 3 metric that uses Part 1 setups
+// (metrics 12, 13, 20) shows them as a separate "Part 1 baseline"; a metric for several parts shows each part.
+function partGroups(x, m) {
+  const own = x.part.startsWith("Part ") ? x.part.slice(5) : null;
+  return ["1", "2", "3"].map(p => {
+    const setups = x.applies.filter(s => s[0] === p);
+    if (!setups.length) return null;
+    const label = own && p < own ? `Part ${p} baseline` : `Part ${p}`;   // only an earlier part is a baseline
+    return {label, rows: setups.flatMap(s => m[s] || [])};
+  }).filter(Boolean);
+}
+function baselineTag(x, s) {
+  const own = x.part.startsWith("Part ") ? x.part.slice(5) : null;
+  return own && s[0] < own ? ` <span class="muted">(Part ${s[0]} baseline)</span>` : "";
+}
 function avgCell(rows, c) {
   if (["pct", "ratio", "int"].includes(c.f)) {
     const st = stat(rows, c.k); if (!st) return '<span class="muted">-</span>';
@@ -357,15 +372,17 @@ function renderResults() {
   const m = bySetup();
   if (openMetric) return renderMetric(m, METRICS.find(x => x.n === openMetric));
   const noCloses = ROWS.length && ROWS.every(r => !r.closes);
-  let h = `<div class="card"><h2>The 21 metrics</h2><p class="muted">From the Measures note in Obsidian (agreed 2026-11-07). <b>Click a metric</b> to see what it means and its value for every setup and run. &#11088; marks a headline metric. "Average now" is over all finished runs of the setups the metric is for.</p>
+  let h = `<div class="card"><h2>The 21 metrics</h2><p class="muted">From the Measures note in Obsidian (agreed 2026-11-07). <b>Click a metric</b> to see what it means and its value for every setup and run. &#11088; marks a headline metric. "Average now" is over all finished runs of the setups the metric is for, <b>one average per part, never mixed</b>: a Part 2 or Part 3 metric that uses Part 1 setups shows them separately as the "Part 1 baseline".</p>
     <p>${ROWS.length} finished run(s).${noCloses ? " <b>No tickets have been closed yet, so every rate shows '-'.</b>" : ""}</p>`;
   ["Part 1", "Part 2", "Part 3", "Run quality"].forEach(part => {
     h += `<h3 style="margin-top:14px">${part}</h3><table><tr><th>#</th><th>Metric (unit)</th><th>Setups</th><th>What it shows</th><th>Answers</th><th>Average now</th></tr>`;
     METRICS.filter(x => x.part === part).forEach(x => {
-      const rows = x.applies.flatMap(s => m[s] || []);
-      const quick = x.compare ? '<span class="muted">open to see the comparison</span>'
-        : x.cols.length === 1 ? avgCell(rows, x.cols[0])
+      const groups = partGroups(x, m);
+      const one = rows => x.cols.length === 1 ? avgCell(rows, x.cols[0])
         : (["pct", "int", "ratio"].includes(x.cols[0].f) ? x.cols.map(c => `${c.label}: ${avgCell(rows, c)}`).join("<br>") : '<span class="muted">open to see</span>');
+      const quick = x.compare ? '<span class="muted">open to see the comparison</span>'
+        : groups.length === 1 ? one(groups[0].rows)
+        : groups.map(g => `<i>${g.label}:</i> ${one(g.rows)}`).join("<br>");
       h += `<tr class="metric-row" tabindex="0" data-n="${x.n}"><td>${x.n}${x.star ? " &#11088;" : ""}</td><td style="white-space:normal"><a href="#metric-${x.n}"><b>${esc(x.name)}</b></a> <span class="muted">(${esc(x.unit)})</span></td>
         <td style="white-space:normal">${esc(x.setupsTxt)}</td><td style="white-space:normal">${esc(x.shows)}</td><td style="white-space:normal">${esc(x.answers)}</td><td style="white-space:normal">${quick || '<span class="muted">open to see</span>'}</td></tr>`;
     });
@@ -390,7 +407,7 @@ function renderMetric(m, x) {
     h += `<h3 style="margin-top:12px">${esc(c.label || x.name)}: every setup, every run</h3>${dotPlot(m, x, c)}<div style="overflow-x:auto"><table><tr><th>Setup</th>${reps.map(r => `<th>Run ${r}</th>`).join("")}<th>Average &plusmn; spread</th></tr>`;
     setups.forEach(s => {
       const byRep = Object.fromEntries(m[s].map(r => [r.repeat, r]));
-      h += `<tr><td>${s} ${SETUP_NAMES[s]}</td>${reps.map(r => `<td style="white-space:normal">${byRep[r] ? fmt(byRep[r][c.k], c.f) : '<span class="muted">not run</span>'}</td>`).join("")}<td>${avgCell(m[s], c)}</td></tr>`;
+      h += `<tr><td>${s} ${SETUP_NAMES[s]}${baselineTag(x, s)}</td>${reps.map(r => `<td style="white-space:normal">${byRep[r] ? fmt(byRep[r][c.k], c.f) : '<span class="muted">not run</span>'}</td>`).join("")}<td>${avgCell(m[s], c)}</td></tr>`;
     });
     h += "</table></div>";
   });
@@ -483,9 +500,9 @@ function renderFigures() {
   const ba = [{key: "m12_cheat_before", label: "cheat before", color: "color-mix(in srgb, var(--cheat) 45%, transparent)"}, {key: "m12_cheat_after", label: "cheat after", color: "var(--cheat)"},
               {key: "m12_tip_before", label: "tip before", color: "color-mix(in srgb, var(--tip) 45%, transparent)"}, {key: "m12_tip_after", label: "tip after", color: "var(--tip)"}];
   const fades = [["never", "1.4", "2.1", "2.4", "2.7"], ["medium", "1.6", "2.2", "2.5", "2.8"], ["fast", "1.8", "2.3", "2.6", "2.9"]];
-  h += `<div class="card"><h2>4. Before and after the pushers leave</h2><p class="muted">Team rates in days 1-4 versus days 5-8. "Nobody" is the Part 1 baseline with the same fade.</p>${legend(ba)}`;
+  h += `<div class="card"><h2>4. Before and after the pushers leave</h2><p class="muted">Team rates in days 1-4 versus days 5-8. The first bars are the Part 1 baseline (nobody planted, same fade), shown beside Part 2, never averaged in.</p>${legend(ba)}`;
   fades.forEach(([f, ...ss]) => {
-    const groups = ss.map((s, i) => ({label: ["Nobody", "Bad only", "Good only", "Both"][i] + "\n" + s, values: Object.fromEntries(ba.map(b => [b.key, stat(m[s] || [], b.key)]))}));
+    const groups = ss.map((s, i) => ({label: ["Part 1 baseline", "Bad only", "Good only", "Both"][i] + "\n" + s, values: Object.fromEntries(ba.map(b => [b.key, stat(m[s] || [], b.key)]))}));
     h += `<h3>${f} fade</h3>${bars(groups, ba, {w: 640})}`;
   });
   h += `</div>`;
