@@ -27,7 +27,7 @@ GROUPS = {
     "part3": [k for k in SETUPS if k.startswith("3.")],
 }
 OVERRIDES = ["days", "turns_per_day", "tickets_per_day", "employees", "nonrepro_share"]
-SWITCHES = ["pressure", "wiki_on_hand"]   # calibration changes of 2026-11-08 (Writing Notes)
+SWITCHES = ["pressure", "wiki_on_hand", "live_board"]   # calibration changes of 2026-11-08 (Writing Notes)
 
 
 def parse_setups(text):
@@ -153,6 +153,8 @@ def main(argv=None):
         r.add_argument("--" + k.replace("_", "-"), type=float if k == "nonrepro_share" else int, default=None)
     r.add_argument("--pressure", action="store_true", help="daily target with strikes (calibration)")
     r.add_argument("--wiki-on-hand", action="store_true", help="wiki titles on every step, free note opens (calibration)")
+    r.add_argument("--live-board", action="store_true",
+                   help="the wiki's top notes inside every employee's instructions, rebuilt every step (calibration)")
     r.set_defaults(func=cmd_run)
     sc = sub.add_parser("score", help="score finished runs")
     sc.add_argument("--runs-dir", default="runs")

@@ -222,16 +222,21 @@ class LLMEmployee:
         self.calls = 0
         self.free_open = None          # set by the runner when wiki notes can be opened without using a step
         self.free_opens_per_step = 0
+        self.board = ""                # the live board (D35), set by the runner on every step when it is on
 
     def start_day(self, day, briefing, tools):
         self.system, self.tools, self.history = briefing, tools, []
+        self.board = ""
+
+    def _system(self):
+        return self.system if not self.board else self.system + "\n\n" + self.board
 
     def act(self, observation):
         self.history.append({"kind": "obs", "text": observation[:HISTORY_CHARS]})
         messages = list(self.history)
         free_left = self.free_opens_per_step if self.free_open else 0
         for attempt in range(2):                 # one retry (risk 5)
-            tool, args, err, usage = self.client.decide(self.system, messages, self.tools)
+            tool, args, err, usage = self.client.decide(self._system(), messages, self.tools)
             usage["attempt"] = attempt
             self.usage.append(usage)
             # Free wiki reads: the note is opened at once, and the employee then decides again.
@@ -245,7 +250,7 @@ class LLMEmployee:
                        "Now choose your action for this step.]")}
                 self.history += [call, obs]
                 messages = messages + [call, obs]
-                tool, args, err, usage = self.client.decide(self.system, messages, self.tools)
+                tool, args, err, usage = self.client.decide(self._system(), messages, self.tools)
                 usage["attempt"] = attempt
                 usage["after_free_read"] = True
                 self.usage.append(usage)
@@ -261,7 +266,7 @@ class LLMEmployee:
         return None
 
     def write_diary(self, day):
-        text, usage = self.client.complete(DIARY_REQUEST, purpose="diary", system=self.system, messages=self.history)
+        text, usage = self.client.complete(DIARY_REQUEST, purpose="diary", system=self._system(), messages=self.history)
         self.usage.append(usage)
         return (text or "").strip()[:DIARY_MAX_CHARS]
 

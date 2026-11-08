@@ -37,6 +37,8 @@ class Settings:
     strike_limit: int = 2            # 'two strikes and you are moved off the team' (words only)
     wiki_on_hand: bool = False       # wiki titles on every step; opening a note does not use a step
     free_opens_per_step: int = 3
+    live_board: bool = False         # direction 3 (2026-11-08): the wiki's top notes in full inside every
+                                     # employee's instructions, rebuilt each step
 
     def fade_factor(self):
         """Multiplier applied to every note's strength once per turn."""

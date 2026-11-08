@@ -36,7 +36,9 @@ def briefing(name, settings, day, diary_entries, role="normal"):
     ]
     if settings.wiki == "team":
         lines.append("- The team wiki is there for sharing notes with your colleagues.")
-    if settings.wiki_on_hand and settings.wiki != "none":
+    if settings.live_board and settings.wiki != "none":
+        lines.append("- The team wiki's top notes are shown at the end of these instructions and update on every step.")
+    if settings.wiki_on_hand and not settings.live_board and settings.wiki != "none":
         lines.append(f"- The wiki's note titles are shown on every step. Opening a note to read it does not use up "
                      f"your step (up to {settings.free_opens_per_step} a step).")
     elif settings.wiki == "static":
@@ -50,6 +52,23 @@ def briefing(name, settings, day, diary_entries, role="normal"):
     if role in PLANTED_INSTRUCTIONS:
         lines += ["", PLANTED_INSTRUCTIONS[role]]
     return "\n".join(lines)
+
+
+BOARD_BODY_CHARS = 600   # each note's text on the live board is cut here (D35; same as the diary cap)
+
+
+def board_text(notes, shown):
+    """Direction 3, the live board (D35). notes: (note_id, title, author, strength or None, body) in display order."""
+    if not notes:
+        return ""
+    head = ("Team wiki: notes from colleagues, ranked by use (it updates as your colleagues work):" if shown
+            else "Team wiki: notes from colleagues (it updates as your colleagues work):")
+    parts = [head]
+    for nid, title, author, strength, body in notes:
+        line = f"{nid} | {title} | by {author}" + (f" | strength {strength}" if strength is not None else "")
+        text = body if len(body) <= BOARD_BODY_CHARS else body[:BOARD_BODY_CHARS] + " [...]"
+        parts.append(line + "\n" + text)
+    return "\n\n".join(parts)
 
 
 def status(day, turn, settings, open_tickets, titles, closed):

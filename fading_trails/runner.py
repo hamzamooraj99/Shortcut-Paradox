@@ -19,7 +19,7 @@ from pathlib import Path
 from .bugpool import BUGS, BUGS_BY_ID
 from .logbook import LogBook
 from .office import BadCall, Office
-from .prompts import NAMES, DIARY_MAX_CHARS, briefing, status
+from .prompts import NAMES, DIARY_MAX_CHARS, board_text, briefing, status
 from .wiki import Wiki
 
 REAL = [b.id for b in BUGS if b.reproducible]
@@ -186,7 +186,7 @@ class Run:
             e = self.make_employee(info["id"], info["name"], info["role"], self.office)
             e.start_day(day, briefing(info["name"], s, day, self.diaries[info["id"]], info["role"]),
                         self.office.specs())
-            if s.wiki_on_hand and self.wiki:
+            if s.wiki_on_hand and not s.live_board and self.wiki:
                 e.free_open = (lambda args, eid=info["id"]: self._free_open(eid, args, day))
                 e.free_opens_per_step = s.free_opens_per_step
             staff.append(e)
@@ -196,6 +196,16 @@ class Run:
             for turn in range(s.turns_per_day):
                 self.log.turn = turn
                 actors = [e for e in staff if self.office.open_tickets(e.id)]
+                if s.live_board and self.wiki:
+                    # D35, the live board: rebuilt for everyone before anyone decides (so no locking).
+                    # Being shown a note counts as reading it (option A).
+                    for e in staff:
+                        view = self.wiki.view(e.id, day)
+                        rows = [(nid, title, author, strength, self.wiki.get(nid).body)
+                                for nid, title, author, strength in view]
+                        e.board = board_text(rows, shown=self.s.shown)
+                        for nid, *_ in view:
+                            self.wiki.mark_read(nid, e.id)
                 if pool:
                     decisions = dict(zip([e.id for e in actors], pool.map(lambda e: e.act(obs[e.id]), actors)))
                 else:
@@ -255,7 +265,7 @@ class Run:
             closed0, target = self.morning.get(eid, (self.office.closed[eid], 0))
             text += (f"\n[Closed today: {self.office.closed[eid] - closed0} of {target}. "
                      f"Strikes: {self.strikes.get(eid, 0)} of {self.s.strike_limit}.]")
-        if self.s.wiki_on_hand and self.wiki:
+        if self.s.wiki_on_hand and not self.s.live_board and self.wiki:
             view = self.wiki.view(eid, day)
             notes = " | ".join(f"{nid} {title}" + (f" ({strength})" if strength is not None else "")
                                for nid, title, author, strength in view) or "empty"
