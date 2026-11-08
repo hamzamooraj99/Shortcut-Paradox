@@ -272,3 +272,7 @@ so.
   8-setup Part 1 needs about 17 hours at the current rate limit). If no, they are calibration only.
 - [OPEN] The daily step budget (8.8.2).
 - [OPEN] The size of any further Part 1 runs, and whether Part 2 runs, decided after the pilots.
+
+**Settled (Hamza, 2026-11-09, about 4 AM, before any revised run):** the pilots are run and kept aside. As of now they
+are **not** Part 1's reported data; whether they may be used is decided later, and if they are, the paper says so.
+The budget number comes after the calibration run; further runs and Part 2 are decided after the pilots.
