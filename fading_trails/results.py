@@ -199,7 +199,7 @@ def _write(path, obj):
     tmp.replace(path)
 
 
-def serve(runs_dir, out_dir, port=8765, every=30, open_browser=True):
+def serve(runs_dir, out_dir, port=8765, every=30, open_browser=True, host="127.0.0.1"):
     export(runs_dir, out_dir)
     runs_dir = runs_dir  # list of folders or patterns; re-expanded on every refresh so new folders appear
 
@@ -221,7 +221,8 @@ def serve(runs_dir, out_dir, port=8765, every=30, open_browser=True):
             self.send_header("Cache-Control", "no-store")
             super().end_headers()
 
-    httpd = ThreadingHTTPServer(("127.0.0.1", port), partial(Quiet, directory=str(out_dir)))
+    # host 0.0.0.0 is only for the Docker container (docker-compose.yml), which publishes the port to this machine only
+    httpd = ThreadingHTTPServer((host, port), partial(Quiet, directory=str(out_dir)))
     url = f"http://127.0.0.1:{port}/"
     print(f"Results page: {url}  (refreshes every {every}s; Ctrl+C to stop)", flush=True)
     if open_browser:

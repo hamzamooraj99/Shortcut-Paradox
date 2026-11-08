@@ -229,3 +229,4 @@ results_*/
 runs_pilot_*.log
 pilot_report.md
 runs_calib*.log
+runs_part*.log

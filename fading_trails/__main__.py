@@ -124,7 +124,8 @@ def cmd_view(args):
         n = export(args.runs_dir, args.out)
         print(f"wrote results for {n} runs into {args.out}/")
     else:
-        serve(args.runs_dir, args.out, port=args.port, every=args.every, open_browser=not args.no_browser)
+        serve(args.runs_dir, args.out, port=args.port, every=args.every, open_browser=not args.no_browser,
+              host=args.host)
 
 
 def cmd_pilot(args):
@@ -168,6 +169,7 @@ def main(argv=None):
     v.add_argument("--every", type=int, default=30, help="seconds between refreshes")
     v.add_argument("--no-browser", action="store_true")
     v.add_argument("--once", action="store_true", help="only write the JSON files, do not serve")
+    v.add_argument("--host", default="127.0.0.1", help="address to listen on (0.0.0.0 only inside Docker)")
     v.set_defaults(func=cmd_view)
     pl = sub.add_parser("pilot", help="compare models from pilot runs: cost, caching, speed, behaviour")
     pl.add_argument("--runs-dir", nargs="+", default=["runs_pilot_*"],
