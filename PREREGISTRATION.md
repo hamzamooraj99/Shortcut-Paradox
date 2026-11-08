@@ -171,3 +171,11 @@ claim (tip about 6, cheat about 4) against what employees actually do.
    often does not fit in 8.
 5. Where the cheat is used, its note gains strength in shown setups; the note that leads on day 2 leads at the end.
 6. Fade speed again changes strengths but not what is shown, unless employees start writing notes.
+
+### 8.7 Open items settled (Hamza, 2026-11-08, about 9:45 PM, before any Version 3 run)
+1. Headline metrics for Part 1 are **4 and 5** (metric 14 stays a Part 2 metric).
+2. Metrics 8, 18 and 19 are reported as defined (empty while the cheat note never leaves the top 10), plus a labelled
+   extra version counted from the day the cheat note's strength falls below 1.
+3. **Part 3 is cancelled** for this hackathon (time) and moved to Future Work.
+4. A full Part 1: Bonus run is made even if the test shows no cheats in either group: it is the Part 1 baseline, and
+   its tip use is the result Part 2 builds on.
