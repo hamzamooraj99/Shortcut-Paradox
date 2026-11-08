@@ -80,3 +80,5 @@ Part 3 (exploratory): back-room files (metric 17), and the cheat rate with a bac
 
 ## 7. Deviations
 Any change after this commit is recorded in DECISIONS.md with its date and reason, and reported in the paper.
+
+- **2026-11-08, after Part 1's first attempt (Hamza):** that attempt (40 runs, `runs_part1`) is not used as data and Part 1 is rerun, because two features were broken: 64% of diaries were blank (the model's thinking used up the output limit; DECISIONS.md D36), and the strikes put no real pressure on anyone (97% of employee-days got one, the threat was never carried out; D37). Changes for the rerun: diary output limit 8,192 with less thinking on diary calls; the daily target counts only that day's tickets; two strikes really move an employee off the team, replaced by a fresh employee; 8 steps a day instead of 12. Everything else in section 3 is unchanged.
