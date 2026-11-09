@@ -284,3 +284,37 @@ actions as in a tight day, about 0.6) the chance of a bonus is about 81% for the
 honest work. Because the tip saves no steps over plain work, the 8.8.2 target "tip about 30-50%" cannot be met by any
 budget; this is recorded and the tip is kept as worded (Hamza: time). The tip is reported as an adoption measure, not
 as a competitive route to the bonus.
+
+### 8.9 Part 1 runs (written 2026-11-09, about 5:45 AM PKT, before any of these runs)
+Decided by Hamza on 2026-11-09 between about 5:00 and 5:40 AM (vault: 00 - Verdict, Session Log). Written by Claude.
+
+**Scope.** Part 2 and Part 3 are out for the hackathon (Future Work). Part 1 keeps every configuration: the 8 setups
+(1.1-1.8) under the revised Version 3 (8.8, 10 steps a day), plus **1.6 Message** (1.6 with boss messages) as the only
+message group, an ablation against 1.6. The separate pilots of 8.8.4 are not run: their three groups (1.1, 1.6 and
+1.6 Message) are part of this set, and the 8.8.4 comparisons are made on these runs.
+
+**Size (deviation from section 3 and the protocol's 40-run floor).** 3 offices per configuration (repeats 0, 1, 2;
+27 offices), **8 employees** per office (not 12) and **6 days** (not 8), 10 steps a day, 2 tickets a day. Reason: the
+provider's per-account rate limit (about 30 calls a minute overnight) leaves about 13,000 calls before the deadline.
+The protocol's own rule for running short ("make each run smaller: fewer days, then fewer employees") is followed, but
+the floor of 5 repeats per setup is not met. The paper states this openly. The change applies equally to every setup.
+
+**Waves.** Wave 1: 1.1, 1.4, 1.6, 1.8 and 1.6 Message (15 offices; the headline comparison 1.4 vs 1.8, the no-wiki
+baseline and the message ablation). Wave 2 after wave 1: 1.2, 1.3, 1.5 and 1.7 (12 offices). If wave 2 cannot finish
+before the deadline, the paper reports what finished and says so.
+
+**Day-1 check (stop rule).** After day 1 of wave 1, every office is checked: no crash; broken calls under 10% (5.0);
+closes are being refused when the example fails and accepted otherwise; every accepted close carries a method type and
+tip parts; `morning` is logged for every employee; boss messages appear in the Message offices only, and would-send
+lines in the others. If any check fails, all runs stop, the fault is fixed, and the runs restart from scratch.
+
+**Client-side pacing.** At Adaption's request each run process sends at most a fixed number of calls a minute
+(`--max-rpm`), evenly spaced. Only the timing of calls changes, not what employees see.
+
+**Commands (wave 1; wave 2 the same with its setups):**
+`python -m fading_trails run --setups <setup> --repeats 3 --employee llm --provider adaption --model qwen3.5-397b
+--judge-model glm-5.2 --employees 8 --days 6 --turns-per-day 10 --tickets-per-day 2 --pressure --live-board --bonus
+--revised --max-rpm <n> --runs-dir runs_part1_v3r/bonus` (Message: add `--boss-messages`, `--runs-dir
+runs_part1_v3r/message`).
+
+**Settled (Hamza, about 5:50 AM, before any of these runs): these runs are Part 1's reported data.** The day-1 check is the safety net.

@@ -44,6 +44,23 @@ DIARY_MAX_TOKENS = 8192
 DIARY_TIMEOUT = 300
 RATE_LIMIT_PATIENCE_SECONDS = 1800   # wait out "rate limit reached" replies for up to 30 minutes (Hamza, 2026-11-09)
 
+# Client-side pacing (Adaption's request, 2026-11-09): at most MAX_RPM requests a minute from this process, evenly
+# spaced, shared by every employee in the process. 0 = no pacing. Only the timing of calls changes.
+MAX_RPM = 0.0
+_pace_lock = threading.Lock()
+_next_slot = [0.0]
+
+
+def _pace():
+    if MAX_RPM <= 0:
+        return
+    with _pace_lock:
+        now = time.time()
+        slot = max(now, _next_slot[0])
+        _next_slot[0] = slot + 60.0 / MAX_RPM
+    if slot > now:
+        time.sleep(slot - now)
+
 
 def load_env():
     try:
@@ -130,6 +147,7 @@ class LLMClient:
         limited = 0.0   # seconds spent waiting out rate-limit replies (Hamza, 2026-11-09: wait, do not crash)
         attempt = 0
         while attempt < 8:
+            _pace()
             t0 = time.time()
             try:
                 r = self._post(ENDPOINTS[self.provider], headers=headers, json=body, timeout=timeout or self.timeout)

@@ -67,6 +67,8 @@ def make_factories(args):
 
 
 def cmd_run(args):
+    from . import llm
+    llm.MAX_RPM = args.max_rpm or 0.0
     setups = parse_setups(args.setups)
     overrides = {k: getattr(args, k) for k in OVERRIDES if getattr(args, k) is not None}
     for k in SWITCHES:
@@ -150,6 +152,8 @@ def main(argv=None):
     r.add_argument("--judge-model", default=None)
     r.add_argument("--reasoning", default="low", help="reasoning effort sent to the model, or 'none'")
     r.add_argument("--runs-dir", default="runs")
+    r.add_argument("--max-rpm", type=float, default=0,
+                   help="client-side pacing: at most this many model calls a minute from this process (0 = off)")
     r.add_argument("--jobs", type=int, default=None,
                    help="most runs at the same time within a setup's batch (default: all its repeats)")
     for k in OVERRIDES:

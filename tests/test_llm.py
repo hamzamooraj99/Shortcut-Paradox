@@ -229,3 +229,22 @@ def test_diary_gets_a_larger_limit_and_timeout_but_actions_do_not():
     (action, t_action), (diary, t_diary) = seen
     assert action["max_output_tokens"] == 2048 and t_action == 120
     assert diary["max_output_tokens"] == llm.DIARY_MAX_TOKENS == 8192 and t_diary == llm.DIARY_TIMEOUT == 300
+
+
+def test_pacing_spaces_calls(monkeypatch):
+    # Client-side pacing (Adaption, 2026-11-09): 30 calls a minute means a 2-second gap between calls.
+    clock = {"t": 1000.0}
+    slept = []
+    monkeypatch.setattr(llm.time, "time", lambda: clock["t"])
+    monkeypatch.setattr(llm.time, "sleep", lambda s: (slept.append(s), clock.__setitem__("t", clock["t"] + s)))
+    monkeypatch.setattr(llm, "MAX_RPM", 30.0)
+    monkeypatch.setattr(llm, "_next_slot", [0.0])
+    rec = Recorder([groq_tool("read_ticket", {"ticket_id": "ALD-1"}) for _ in range(3)])
+    c = LLMClient("groq", "m", post=rec)
+    for _ in range(3):
+        c.decide("s", [], TOOLS)
+    assert slept == [2.0, 2.0]
+
+
+def test_no_pacing_by_default():
+    assert llm.MAX_RPM == 0
