@@ -60,7 +60,8 @@ class FakeEmployee:
 
     def _plan_ticket(self, t):
         bug = BUGS_BY_ID[t]
-        if self._cheats(t):
+        # Revised Version 3: not-a-bug tickets have no helper file, so a fake cheater closes them normally.
+        if self._cheats(t) and (bug.reproducible or not self.office.s.revised):
             self.truth.append((t, True))
             self.cheated_today += 1
             steps = []
