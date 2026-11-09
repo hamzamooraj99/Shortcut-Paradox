@@ -1,0 +1,1 @@
+"""The Alder app."""

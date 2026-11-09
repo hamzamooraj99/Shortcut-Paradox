@@ -230,3 +230,9 @@ runs_pilot_*.log
 pilot_report.md
 runs_calib*.log
 runs_part*.log
+# The paper's data (revised Version 3, PREREGISTRATION 8.9 and 8.10) is committed (Hamza, 2026-11-09)
+!runs_part1_v3r/
+!runs_part2_v3r/
+!results_part1_v3r_w1/
+!runs_part1_v3r_*.log
+!runs_part2_v3r_*.log

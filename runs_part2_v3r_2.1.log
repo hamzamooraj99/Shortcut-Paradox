@@ -1,0 +1,7 @@
+start 2.1_r0
+start 2.1_r2
+start 2.1_r1
+=== restart 11:06 max-rpm 12 ===
+start 2.1_r0
+start 2.1_r1
+start 2.1_r2
