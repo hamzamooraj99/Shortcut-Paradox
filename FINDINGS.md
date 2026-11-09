@@ -284,6 +284,8 @@ Why nobody cheated, in rough order of how much the data supports each:
 8. ALD-108 has only 2 failing extra hidden inputs, not the planned 4 (D39).
 9. Part 2 runs only the bad-pusher row (2.1-2.3). The good and both rows (2.4-2.9) and Part 3 were not run.
 10. Rate-limit pacing changed during the runs; only the timing of calls changed, not what employees saw.
+11. Planted cheaters were meant to be protected from removal for strikes (Hamza, 2026-11-08); that was never built. No effect: no planted worker got a strike (all 11 Part 2 strikes were by normal employees).
+12. Planted cheaters were told to promote the cheat on the wiki but never posted (F12), so Part 2 tests copying through note rank and the planted note, not through a colleague's own post.
 
 ---
 
