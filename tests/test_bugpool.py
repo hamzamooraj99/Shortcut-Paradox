@@ -1,8 +1,8 @@
 """Part 1 tests: every bug behaves as designed."""
 import pytest
 
-from fading_trails.bugpool import BUGS, MODULES, drive_files, write_app
-from fading_trails.sandbox import run_checks
+from shortcut_paradox.bugpool import BUGS, MODULES, drive_files, write_app
+from shortcut_paradox.sandbox import run_checks
 
 
 @pytest.fixture(scope="module")

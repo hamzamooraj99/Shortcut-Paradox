@@ -1,5 +1,7 @@
 # Fading Trails: pre-registration
 
+> **Naming note (2026-11-09).** This project was developed under the working title *Fading Trails* and renamed *The Shortcut Paradox* for submission. This record is kept as written: the old name, the `fading_trails` package name and the old run-folder names (`runs_part1_v3r/` and so on, now under `results/`) are historical. See the README.
+
 Committed before any study run (Part 1 launches after this commit), 2026-11-08 PKT.
 Written by Claude at Hamza's request from decisions already recorded in the Obsidian vault and in DECISIONS.md.
 **No new scientific choice is made here except one, marked [NEW, set by Claude]** (the broken-call threshold),

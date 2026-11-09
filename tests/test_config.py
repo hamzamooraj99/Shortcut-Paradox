@@ -1,4 +1,4 @@
-from fading_trails.config import SETUPS, settings_for
+from shortcut_paradox.config import SETUPS, settings_for
 
 
 def test_19_setups():

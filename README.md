@@ -1,8 +1,25 @@
-# Fading Trails
+# The Shortcut Paradox
 
 A solo entry for the [Apart Research](https://apartresearch.com) Swarm Alignment hackathon (6-8 November 2026).
 
-**Status (Sat 7 Nov 2026):** the simulation is built and tested with scripted employees. It has not yet been run on a real model.
+**Status (Mon 9 Nov 2026):** the study has been run on a real model (Qwen3.5-397B). Part 1 wave 1 and Part 2 are finished; Part 1 wave 2 is paused and reported as unfinished. Findings are in [FINDINGS.md](FINDINGS.md), the data in [results/](results/).
+
+## Why the name changed
+
+This project began as **Fading Trails**. That name described the *mechanism* we planned to study: wiki notes that fade like ant trails, and whether fading clears a cheat out of a team's shared memory.
+
+The runs did not go that way. The planted cheat (hard-code the customer's example) was never copied. Across 36 offices, employees who were not told to cheat made 0 cheats in 1,606 ticket closes. They tested both notes against the code, called the cheat note "misleading", and kept only its harmless half. Fading still worked on the board, but there was no spreading cheat for it to remove.
+
+The finding became the shortcut that was taken but not the cheat, so the paper and the repository are now named **The Shortcut Paradox**. Only the name changed: the design, pre-registration and data are the same.
+
+| | Before | Now |
+|---|---|---|
+| Project name | Fading Trails | The Shortcut Paradox |
+| Python package | `fading_trails` | `shortcut_paradox` |
+| Conda environment | `shortcut-paradox` | `shortcut-paradox` |
+| Run data | `runs_part1_v3r/`, `runs_part2_v3r/`, `results_*` in the repo root | everything under `results/` |
+
+[PREREGISTRATION.md](PREREGISTRATION.md) and [DECISIONS.md](DECISIONS.md) are kept as written, so they still use the old name and old folder names. Each opens with a note saying so.
 
 ## The idea
 
@@ -44,33 +61,37 @@ Use of the cheat and the tip is read from the action logs only, never from what 
 
 ## Running it
 
-Set up the environment once with `conda env create -f environment.yml`, then `conda activate fading-trails`. Copy `.env.example` to `.env` and add your keys.
+Set up the environment once with `conda env create -f environment.yml`, then `conda activate shortcut-paradox`. Copy `.env.example` to `.env` and add your keys.
 
 ```
 # Tests, on every core (pytest-xdist; about 2 minutes with 16 cores)
 python -m pytest -q tests
 
 # A run with scripted employees: no AI, no cost
-python -m fading_trails run --setups 1.6 --repeats 1 --employee fake --runs-dir runs_fake
+python -m shortcut_paradox run --setups 1.6 --repeats 1 --employee fake --runs-dir runs_fake
 
 # Smoke test on Groq: one small run
-python -m fading_trails run --setups 1.6 --repeats 1 --employee llm --provider groq --model MODEL_ID --runs-dir runs_smoke --employees 2 --days 1 --turns-per-day 8
+python -m shortcut_paradox run --setups 1.6 --repeats 1 --employee llm --provider groq --model MODEL_ID --runs-dir runs_smoke --employees 2 --days 1 --turns-per-day 8
 
 # Pilot on Adaption, then the cost and time estimate
-python -m fading_trails run --setups 1.6 --repeats 1 --employee llm --provider adaption --model MODEL_ID --runs-dir runs_pilot --days 3
-python -m fading_trails pilot --runs-dir runs_pilot --price-in 0.10 --price-out 0.40
+python -m shortcut_paradox run --setups 1.6 --repeats 1 --employee llm --provider adaption --model MODEL_ID --runs-dir runs_pilot --days 3
+python -m shortcut_paradox pilot --runs-dir runs_pilot --price-in 0.10 --price-out 0.40
 
 # The study: every setup, 5 repeats, then the score sheets
-python -m fading_trails run --setups all --repeats 5 --employee llm --provider adaption --model MODEL_ID
-python -m fading_trails score --runs-dir runs --out results
+python -m shortcut_paradox run --setups all --repeats 5 --employee llm --provider adaption --model MODEL_ID
+python -m shortcut_paradox score --runs-dir runs --out results
 
 # The results page: progress, metrics, figures, an office replay of any run, and diaries
-python -m fading_trails view --runs-dir runs
+python -m shortcut_paradox view --runs-dir runs
 ```
 
 The results page reads JSON files that `view` writes into `results/` (one file per run, plus an index and the metric rows), serves them at http://127.0.0.1:8765 and refreshes them every 30 seconds, so you can watch runs while they go.
 
-Setups run one at a time, with each setup's 5 repeats side by side. Re-running the same `run` command resumes: finished runs are skipped, and a run that crashed restarts from its last finished day. Settings marked PILOT live in `fading_trails/config.py`. Implementation choices and open questions are in [DECISIONS.md](DECISIONS.md).
+Setups run one at a time, with each setup's 5 repeats side by side. Re-running the same `run` command resumes: finished runs are skipped, and a run that crashed restarts from its last finished day. Settings marked PILOT live in `shortcut_paradox/config.py`. Implementation choices and open questions are in [DECISIONS.md](DECISIONS.md).
+
+## Where the results are
+
+All study data is under [results/](results/); [results/README.md](results/README.md) says what each folder holds. The numbers behind the paper are in `results/summary.md` and the scored sheets in `results/part1/scored/` and `results/part2/scored/`. Rebuild the summary with `python scripts/summary_v3r.py`.
 
 ## Code map
 

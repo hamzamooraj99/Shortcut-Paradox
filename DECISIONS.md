@@ -1,5 +1,7 @@
 # Implementation decisions and open issues
 
+> **Naming note (2026-11-09).** This project was developed under the working title *Fading Trails* and renamed *The Shortcut Paradox* for submission. This record is kept as written: the old name, the `fading_trails` package name and the old run-folder names (`runs_part1_v3r/` and so on, now under `results/`) are historical. See the README.
+
 The research design lives in the Obsidian vault (`04 - The Build/01 - Build Plan` and the method notes). This file records how the code turns that design into something that runs: the choices the notes left open, and anything still unresolved. Items marked **CONFIRM** need Hamza's OK before the pilot.
 
 ## Decisions

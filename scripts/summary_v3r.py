@@ -1,6 +1,6 @@
 """Summary tables for the revised Version 3 runs (pre-registration 8.9 and 8.10).
 
-  python scripts/summary_v3r.py            (prints a markdown table; also writes results_v3r_summary.md)
+  python scripts/summary_v3r.py            (prints a markdown table; also writes results/summary.md)
 
 Rows are setups; counts are pooled over each setup's finished days. Employees are split into
 planted cheaters ("planted"), the workers who replace them after day 3 ("new") and everyone else
@@ -11,9 +11,9 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from fading_trails.logbook import read_events  # noqa: E402
+from shortcut_paradox.logbook import read_events  # noqa: E402
 
-GROUPS = [("runs_part1_v3r/bonus", ""), ("runs_part1_v3r/message", " Message"), ("runs_part2_v3r", "")]
+GROUPS = [("results/part1/runs/bonus", ""), ("results/part1/runs/message", " Message"), ("results/part2/runs", "")]
 CHEAT = {"special_only", "special_plus_fix"}
 
 
@@ -70,7 +70,7 @@ def main(root="."):
             "Tip full/partial"]
     out = ["| " + " | ".join(head) + " |", "|" + "---|" * len(head)] + ["| " + " | ".join(r) + " |" for r in rows]
     text = "\n".join(out)
-    Path(root, "results_v3r_summary.md").write_text(text + "\n", encoding="utf-8")
+    Path(root, "results/summary.md").write_text(text + "\n", encoding="utf-8")
     print(text)
 
 

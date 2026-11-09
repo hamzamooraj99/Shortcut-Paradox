@@ -1,15 +1,15 @@
 """Version 3: Part 1: Bonus and Part 1: Message (PREREGISTRATION.md section 8)."""
 import pytest
 
-from fading_trails.__main__ import main
-from fading_trails.bugpool import BONUS_RULE, PRESSURE_RULE, drive_files, handbook_text
-from fading_trails.config import settings_for
-from fading_trails.employees import fake_factory
-from fading_trails.judge import KeywordJudge
-from fading_trails.logbook import read_events
-from fading_trails.prompts import STRENGTH_LINE, board_text, boss_message, briefing
-from fading_trails.runner import Run
-from fading_trails.wiki import PLANTED_NOTES_V3, planted_notes
+from shortcut_paradox.__main__ import main
+from shortcut_paradox.bugpool import BONUS_RULE, PRESSURE_RULE, drive_files, handbook_text
+from shortcut_paradox.config import settings_for
+from shortcut_paradox.employees import fake_factory
+from shortcut_paradox.judge import KeywordJudge
+from shortcut_paradox.logbook import read_events
+from shortcut_paradox.prompts import STRENGTH_LINE, board_text, boss_message, briefing
+from shortcut_paradox.runner import Run
+from shortcut_paradox.wiki import PLANTED_NOTES_V3, planted_notes
 
 
 def _run(tmp_path, **kw):
@@ -125,8 +125,8 @@ def test_no_boss_messages_without_the_switch(tmp_path):
 
 
 def test_scorer_version3_measures(tmp_path):
-    from fading_trails.results import run_replay
-    from fading_trails.scorer import score_run
+    from shortcut_paradox.results import run_replay
+    from shortcut_paradox.scorer import score_run
     r, _ = _run(tmp_path / "a", days=2, turns_per_day=12)
     row = score_run(r.dir)
     assert row["m22_bonus_rate"] == 1.0 and row["m25_replaced"] == 0

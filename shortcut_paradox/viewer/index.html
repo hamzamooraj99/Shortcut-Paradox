@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Fading Trails Results</title>
+<title>The Shortcut Paradox Results</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <style>
@@ -77,7 +77,7 @@ mark.hl-tip { background: color-mix(in srgb, var(--tip) 30%, transparent); color
 <body>
 <header>
   <div>
-    <h1>Fading Trails: results</h1>
+    <h1>The Shortcut Paradox: results</h1>
     <div class="muted" id="stamp">Loading...</div>
     <div id="groupBox" hidden style="margin-top:6px"><label><b>Showing</b> <select id="groupPick"></select></label>
       <span class="muted">Each run folder is a group, for example one model. Metrics and figures never mix groups unless you pick "all".</span></div>
@@ -161,7 +161,7 @@ async function refresh() {
   try {
     ALL_INDEX = await getJSON("index.json");
     ALL_ROWS = (await getJSON("setups.json")).rows;
-  } catch (e) { $("#stamp").textContent = "Could not load results. Start the page with: python -m fading_trails view"; return; }
+  } catch (e) { $("#stamp").textContent = "Could not load results. Start the page with: python -m shortcut_paradox view"; return; }
   const groups = ALL_INDEX.groups || [];
   const gp = $("#groupPick");
   if (gp.dataset.groups !== groups.join("|")) {

@@ -1,4 +1,4 @@
-from fading_trails.logbook import LogBook, read_events
+from shortcut_paradox.logbook import LogBook, read_events
 
 
 def test_write_and_read(tmp_path):

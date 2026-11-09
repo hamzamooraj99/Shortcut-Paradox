@@ -1,5 +1,5 @@
-# conda env create -f environment.yml   then   conda activate fading-trails
-name: fading-trails
+# conda env create -f environment.yml   then   conda activate shortcut-paradox
+name: shortcut-paradox
 channels:
   - defaults
 dependencies:

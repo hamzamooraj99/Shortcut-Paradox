@@ -1,10 +1,10 @@
 import json
 
-from fading_trails.config import settings_for
-from fading_trails.employees import fake_factory
-from fading_trails.judge import KeywordJudge
-from fading_trails.results import export
-from fading_trails.runner import Run
+from shortcut_paradox.config import settings_for
+from shortcut_paradox.employees import fake_factory
+from shortcut_paradox.judge import KeywordJudge
+from shortcut_paradox.results import export
+from shortcut_paradox.runner import Run
 
 
 def test_export_for_the_results_page(tmp_path):

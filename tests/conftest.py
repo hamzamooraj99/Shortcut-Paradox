@@ -1,6 +1,6 @@
 import pytest
 
-import fading_trails.llm as llm
+import shortcut_paradox.llm as llm
 
 
 @pytest.fixture(autouse=True)

@@ -4,7 +4,7 @@
   results/setups.json       every finished run's metrics (the 21-metric rows)
   results/runs/<run>.json   one run, turn by turn, for the office replay
 
-`python -m fading_trails view` writes these, serves the folder on a local address and
+`python -m shortcut_paradox view` writes these, serves the folder on a local address and
 re-writes them every 30 seconds, so the page can follow runs while they go.
 """
 import json

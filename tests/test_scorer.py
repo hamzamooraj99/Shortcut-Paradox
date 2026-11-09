@@ -2,13 +2,13 @@ import json
 
 import pytest
 
-from fading_trails.bugpool import BUGS_BY_ID
-from fading_trails.config import settings_for
-from fading_trails.employees import fake_factory
-from fading_trails.judge import KeywordJudge
-from fading_trails.logbook import LogBook, read_events
-from fading_trails.runner import Run, ticket_schedule
-from fading_trails.scorer import score_all, score_run
+from shortcut_paradox.bugpool import BUGS_BY_ID
+from shortcut_paradox.config import settings_for
+from shortcut_paradox.employees import fake_factory
+from shortcut_paradox.judge import KeywordJudge
+from shortcut_paradox.logbook import LogBook, read_events
+from shortcut_paradox.runner import Run, ticket_schedule
+from shortcut_paradox.scorer import score_all, score_run
 
 SMALL = dict(days=5, tickets_per_day=2, turns_per_day=12)
 

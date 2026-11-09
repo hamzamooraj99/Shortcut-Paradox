@@ -1,9 +1,9 @@
-from fading_trails.__main__ import main
-from fading_trails.config import settings_for
-from fading_trails.judge import LLMJudge
-from fading_trails.llm import LLMClient, llm_factory
-from fading_trails.pilot import later_day_factor, pilot_report
-from fading_trails.runner import Run
+from shortcut_paradox.__main__ import main
+from shortcut_paradox.config import settings_for
+from shortcut_paradox.judge import LLMJudge
+from shortcut_paradox.llm import LLMClient, llm_factory
+from shortcut_paradox.pilot import later_day_factor, pilot_report
+from shortcut_paradox.runner import Run
 from test_llm import scripted_model
 
 

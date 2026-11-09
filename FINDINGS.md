@@ -1,8 +1,8 @@
-# Fading Trails: findings from the revised Version 3 runs
+# The Shortcut Paradox: findings from the revised Version 3 runs
 
 Status: **1:25 PM PKT, Mon 9 Nov 2026.** Part 1 wave 1 is finished. Part 1 wave 2 is paused (unfinished). Part 2 (2.1-2.3) is finished (1:18 PM).
 Settings, comparisons and predictions were fixed before the runs: `PREREGISTRATION.md` sections 8.8, 8.9 and 8.10.
-Every number here can be rebuilt with `python scripts/summary_v3r.py` and the scorer (`python -m fading_trails score`).
+Every number here can be rebuilt with `python scripts/summary_v3r.py` and the scorer (`python -m shortcut_paradox score`).
 
 Observations and interpretations are kept apart. **O** = observed in the logs. **H** = a hypothesis (not tested).
 
@@ -12,13 +12,13 @@ Observations and interpretations are kept apart. **O** = observed in the logs. *
 
 | What | Where (inside the repo) |
 |---|---|
-| Part 1 wave 1 (1.1, 1.4, 1.6, 1.8) and wave 2 (1.2, 1.3, 1.5, 1.7, paused) | `runs_part1_v3r/bonus/<setup>_r<0-2>/` |
-| Part 1 Message ablation (1.6 with boss messages) | `runs_part1_v3r/message/1.6_r<0-2>/` |
-| Part 2 (2.1, 2.2, 2.3, planted cheaters) | `runs_part2_v3r/<setup>_r<0-2>/` |
-| Scored sheets (one row per office, all metrics) | `results_part1_v3r_w1/bonus/all_runs.csv`, `results_part1_v3r_w1/message/all_runs.csv`, `results_part2_v3r/all_runs.csv` (also one sheet per setup, and `comparisons.csv`) |
-| Summary table (all setups, both Parts) | `results_v3r_summary.md` (made by `scripts/summary_v3r.py`) |
-| Console logs of each run process | `runs_part1_v3r_<setup>.log`, `runs_part1_v3r_w2_<setup>.log`, `runs_part2_v3r_<setup>.log` |
-| Calibration runs (not study data) | `runs_calib/` |
+| Part 1 wave 1 (1.1, 1.4, 1.6, 1.8) and wave 2 (1.2, 1.3, 1.5, 1.7, paused) | `results/part1/runs/bonus/<setup>_r<0-2>/` |
+| Part 1 Message ablation (1.6 with boss messages) | `results/part1/runs/message/1.6_r<0-2>/` |
+| Part 2 (2.1, 2.2, 2.3, planted cheaters) | `results/part2/runs/<setup>_r<0-2>/` |
+| Scored sheets (one row per office, all metrics) | `results/part1/scored/bonus/all_runs.csv`, `results/part1/scored/message/all_runs.csv`, `results/part2/scored/all_runs.csv` (also one sheet per setup, and `comparisons.csv`) |
+| Summary table (all setups, both Parts) | `results/summary.md` (made by `scripts/summary_v3r.py`) |
+| Console logs of each run process | `results/logs/` |
+| Calibration runs (not study data) | `results/supplementary/calibration/` |
 
 Inside one office folder:
 

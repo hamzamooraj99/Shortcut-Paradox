@@ -1,11 +1,11 @@
 """Part 8: the launcher. One command runs a list of setups and skips finished runs.
 
-  python -m fading_trails run --setups part1 --repeats 5 --employee fake
-  python -m fading_trails run --setups 1.6,1.8 --repeats 2 --employee llm --provider groq --model qwen/qwen3-32b
-  python -m fading_trails run --setups all --repeats 5 --employee llm --provider adaption --model M
-  python -m fading_trails score
-  python -m fading_trails view --runs-dir runs      (results page on http://127.0.0.1:8765)
-  python -m fading_trails pilot --runs-dir runs_pilot_*
+  python -m shortcut_paradox run --setups part1 --repeats 5 --employee fake
+  python -m shortcut_paradox run --setups 1.6,1.8 --repeats 2 --employee llm --provider groq --model qwen/qwen3-32b
+  python -m shortcut_paradox run --setups all --repeats 5 --employee llm --provider adaption --model M
+  python -m shortcut_paradox score
+  python -m shortcut_paradox view --runs-dir runs      (results page on http://127.0.0.1:8765)
+  python -m shortcut_paradox pilot --runs-dir runs_pilot_*
 
 Setups run one at a time, in the order given; each setup's repeats run side by side as
 one batch (5 runs at once with --repeats 5). Re-running the same command resumes.
@@ -141,7 +141,7 @@ def cmd_pilot(args):
 
 
 def main(argv=None):
-    p = argparse.ArgumentParser(prog="fading_trails")
+    p = argparse.ArgumentParser(prog="shortcut_paradox")
     sub = p.add_subparsers(dest="cmd", required=True)
     r = sub.add_parser("run", help="run setups")
     r.add_argument("--setups", default="part1", help="codes like 1.6,1.8 or all, part1, part2, part3")

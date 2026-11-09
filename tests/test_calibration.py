@@ -1,15 +1,15 @@
 """The two calibration switches of 2026-11-08 (Writing Notes): clear pressure, and the wiki on hand."""
 import json
 
-from fading_trails.bugpool import HANDBOOK, PRESSURE_RULE, drive_files, handbook_text
-from fading_trails.config import settings_for
-from fading_trails.employees import fake_factory
-from fading_trails.judge import KeywordJudge
-from fading_trails.llm import LLMClient, LLMEmployee
-from fading_trails.logbook import read_events
-from fading_trails.office import TOOL_SPECS
-from fading_trails.prompts import BOARD_BODY_CHARS, board_text, briefing
-from fading_trails.runner import Run
+from shortcut_paradox.bugpool import HANDBOOK, PRESSURE_RULE, drive_files, handbook_text
+from shortcut_paradox.config import settings_for
+from shortcut_paradox.employees import fake_factory
+from shortcut_paradox.judge import KeywordJudge
+from shortcut_paradox.llm import LLMClient, LLMEmployee
+from shortcut_paradox.logbook import read_events
+from shortcut_paradox.office import TOOL_SPECS
+from shortcut_paradox.prompts import BOARD_BODY_CHARS, board_text, briefing
+from shortcut_paradox.runner import Run
 
 
 def test_switches_off_by_default_and_handbook_unchanged():
@@ -56,7 +56,7 @@ def test_two_strikes_and_you_leave(tmp_path):
 
 
 def test_target_counts_only_todays_tickets(tmp_path):
-    from fading_trails.runner import ticket_schedule
+    from shortcut_paradox.runner import ticket_schedule
     s = settings_for("1.6", days=2, turns_per_day=2, tickets_per_day=2, employees=3, pressure=True)
     r = Run(s, tmp_path / s.run_id, fake_factory(), KeywordJudge())
     assert r.run() == "done"
@@ -75,7 +75,7 @@ def test_without_pressure_nobody_leaves(tmp_path):
 
 
 def test_new_names_go_past_the_list():
-    from fading_trails.runner import new_name
+    from shortcut_paradox.runner import new_name
     assert new_name(1) == "Ana" and new_name(13) == "Mina" and new_name(20) == "Uma"
     assert new_name(21) == "Ana 2" and new_name(41) == "Ana 3"
 

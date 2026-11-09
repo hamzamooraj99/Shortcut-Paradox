@@ -6,19 +6,19 @@ from pathlib import Path
 
 import pytest
 
-from fading_trails.__main__ import main
-from fading_trails.bugpool import (ALL_MODULES, BUGS, BUGS_BY_ID, HELPERS, MODULES, entry_source, hidden_for,
+from shortcut_paradox.__main__ import main
+from shortcut_paradox.bugpool import (ALL_MODULES, BUGS, BUGS_BY_ID, HELPERS, MODULES, entry_source, hidden_for,
                                    special_case_source, write_app)
-from fading_trails.config import settings_for
-from fading_trails.employees import fake_factory
-from fading_trails.judge import KeywordJudge
-from fading_trails.logbook import read_events
-from fading_trails.office import classify
-from fading_trails.prompts import briefing
-from fading_trails.runner import Run
-from fading_trails.sandbox import run_checks
-from fading_trails.scorer import score_run
-from fading_trails.wiki import PLANTED_NOTES_V4
+from shortcut_paradox.config import settings_for
+from shortcut_paradox.employees import fake_factory
+from shortcut_paradox.judge import KeywordJudge
+from shortcut_paradox.logbook import read_events
+from shortcut_paradox.office import classify
+from shortcut_paradox.prompts import briefing
+from shortcut_paradox.runner import Run
+from shortcut_paradox.sandbox import run_checks
+from shortcut_paradox.scorer import score_run
+from shortcut_paradox.wiki import PLANTED_NOTES_V4
 
 REAL = [b for b in BUGS if b.reproducible]
 

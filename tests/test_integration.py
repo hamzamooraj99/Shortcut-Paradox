@@ -1,7 +1,7 @@
 """Final integration test: every setup runs from one command and is scored."""
 import csv
 
-from fading_trails.__main__ import main
+from shortcut_paradox.__main__ import main
 
 
 def test_all_19_setups_end_to_end(tmp_path):

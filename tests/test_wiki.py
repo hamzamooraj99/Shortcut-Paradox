@@ -1,6 +1,6 @@
-from fading_trails.config import settings_for
-from fading_trails.judge import KeywordJudge
-from fading_trails.wiki import Wiki
+from shortcut_paradox.config import settings_for
+from shortcut_paradox.judge import KeywordJudge
+from shortcut_paradox.wiki import Wiki
 from helpers import ListLog
 
 

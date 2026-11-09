@@ -219,21 +219,10 @@ __marimo__/
 # Streamlit
 .streamlit/secrets.toml
 
-# Fading Trails
-runs/
+# The Shortcut Paradox
+/runs/
 runs_*/
-results/
-demo_runs/
-demo_results/
-results_*/
-runs_pilot_*.log
-pilot_report.md
-runs_calib*.log
-runs_part*.log
-# The paper's data (revised Version 3, PREREGISTRATION 8.9 and 8.10) is committed (Hamza, 2026-11-09)
-!runs_part1_v3r/
-!runs_part2_v3r/
-!results_part1_v3r_w1/
-!runs_part1_v3r_*.log
-!runs_part2_v3r_*.log
-!results_part2_v3r/
+# Study data (results/part1, results/part2, results/summary.md, results/logs) is committed.
+# Everything else under results/ (earlier attempts, calibration, pilots, viewer cache) is local only.
+results/supplementary/
+!results/logs/*.log

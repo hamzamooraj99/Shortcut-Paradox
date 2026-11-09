@@ -1,4 +1,4 @@
-from fading_trails.__main__ import main, parse_setups
+from shortcut_paradox.__main__ import main, parse_setups
 
 TINY = ["--employees", "3", "--days", "2", "--turns-per-day", "8", "--tickets-per-day", "2"]
 
@@ -29,7 +29,7 @@ def test_part3_stop_rule(tmp_path, capsys):
 
 
 def test_part3_continues_when_someone_writes(tmp_path, monkeypatch):
-    import fading_trails.employees as emp
+    import shortcut_paradox.employees as emp
     real = emp.fake_factory
     monkeypatch.setattr(emp, "fake_factory", lambda **kw: real(back_room_day=1, **kw))
     runs = str(tmp_path / "runs")

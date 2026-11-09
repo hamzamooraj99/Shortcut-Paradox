@@ -3,14 +3,14 @@ import re
 
 import pytest
 
-import fading_trails.llm as llm
-from fading_trails.config import settings_for
-from fading_trails.judge import LLMJudge
-from fading_trails.llm import LLMClient, LLMEmployee, ProviderError, llm_factory
-from fading_trails.logbook import read_events
-from fading_trails.office import TOOL_SPECS
-from fading_trails.runner import Run
-from fading_trails.scorer import score_run
+import shortcut_paradox.llm as llm
+from shortcut_paradox.config import settings_for
+from shortcut_paradox.judge import LLMJudge
+from shortcut_paradox.llm import LLMClient, LLMEmployee, ProviderError, llm_factory
+from shortcut_paradox.logbook import read_events
+from shortcut_paradox.office import TOOL_SPECS
+from shortcut_paradox.runner import Run
+from shortcut_paradox.scorer import score_run
 
 
 class Resp:

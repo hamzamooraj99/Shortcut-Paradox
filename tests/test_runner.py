@@ -2,11 +2,11 @@ from collections import Counter
 
 import pytest
 
-from fading_trails.config import settings_for
-from fading_trails.employees import fake_factory
-from fading_trails.judge import KeywordJudge
-from fading_trails.logbook import read_events
-from fading_trails.runner import Run, planted_roles, ticket_schedule
+from shortcut_paradox.config import settings_for
+from shortcut_paradox.employees import fake_factory
+from shortcut_paradox.judge import KeywordJudge
+from shortcut_paradox.logbook import read_events
+from shortcut_paradox.runner import Run, planted_roles, ticket_schedule
 
 SMALL = dict(days=4, tickets_per_day=2, turns_per_day=12)
 
@@ -95,7 +95,7 @@ def test_crash_mid_day_resumes(tmp_path):
     calls = {"n": 0}
 
     def flaky(emp_id, name, role, office):
-        from fading_trails.employees import FakeEmployee
+        from shortcut_paradox.employees import FakeEmployee
         e = FakeEmployee(emp_id, name, role, office)
         orig = e.act
 
