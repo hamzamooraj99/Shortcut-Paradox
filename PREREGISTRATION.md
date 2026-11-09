@@ -319,8 +319,8 @@ runs_part1_v3r/message`).
 
 **Settled (Hamza, about 5:50 AM, before any of these runs): these runs are Part 1's reported data.** The day-1 check is the safety net.
 
-### 8.10 Part 2 runs, planted cheaters (written 2026-11-09, about 11:30 AM PKT, before any of these runs)
-Decided by Hamza on 2026-11-09 about 11:20 AM, after wave 1 of 8.9 showed no special cases in 799 closes. Written by Claude.
+### 8.10 Part 2 runs, planted cheaters (written 2026-11-09, about 11:00 AM PKT, before any of these runs)
+Decided by Hamza on 2026-11-09 about 10:55 AM, after wave 1 of 8.9 showed no special cases in 799 closes. Written by Claude.
 
 **What changes.** Wave 2 of 8.9 (1.2, 1.3, 1.5, 1.7) is paused at day 3-4 (finished days kept; it resumes later only if time allows, and is reported as unfinished otherwise). Part 2 setups 2.1, 2.2 and 2.3 (two planted cheaters per office, told to special-case every ticket and to promote it on the wiki; notes never fade, medium, fast) run in their place: 3 offices each, with exactly the settings of 8.9 (8 employees, 6 days, 10 steps, 2 tickets, pressure, live board, bonus, revised Version 3). Planted workers work days 1-3 and are replaced after day 3, as in the protocol.
 
