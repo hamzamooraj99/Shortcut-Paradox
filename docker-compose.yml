@@ -1,7 +1,7 @@
 # The results page, always on: http://127.0.0.1:8765
 #   start:  docker compose up -d
 #   stop:   docker compose down
-# Shows the study runs only (runs_part1, runs_part2, ...); pilot, calibration and test runs are in runs_archive/,
+# Shows the study runs only (runs_part1, the revised Version 3 runs: runs_part1_v3r/bonus and /message, runs_part2_v3r); pilot, calibration and test runs are in runs_archive/,
 # the discarded first Part 1 attempt in runs_discarded/. The repo folder is mounted, so new run folders appear by themselves, refreshed
 # every 60 seconds. The page needs only the Python standard library, so a plain Python image is enough.
 # The port is published to this machine only (127.0.0.1), never to the network.
@@ -17,4 +17,4 @@ services:
       - "127.0.0.1:8765:8765"
     command: >
       python -m fading_trails view --host 0.0.0.0 --port 8765 --no-browser --every 60 --out results_page
-      --runs-dir "runs_part*"
+      --runs-dir runs_part1 runs_part1_v3r/bonus runs_part1_v3r/message runs_part2_v3r
