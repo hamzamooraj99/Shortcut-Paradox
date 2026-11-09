@@ -276,3 +276,11 @@ so.
 **Settled (Hamza, 2026-11-09, about 4 AM, before any revised run):** the pilots are run and kept aside. As of now they
 are **not** Part 1's reported data; whether they may be used is decided later, and if they are, the paper says so.
 The budget number comes after the calibration run; further runs and Part 2 are decided after the pilots.
+
+**Settled after the calibration run (Hamza, 2026-11-09, about 5 AM, before any pilot):** the daily step budget is
+**10 steps**. Calibration (8.8.3; 4 offices, $3.89): an honest real-bug fix took a median of 7 steps on its ticket, both
+without and with Alex's method (5-10 and 6-9); a non-bug 4; the cheat recipe is about 4-5. At 10 steps (non-ticket
+actions as in a tight day, about 0.6) the chance of a bonus is about 81% for the cheat, 9% for the tip and 15% for plain
+honest work. Because the tip saves no steps over plain work, the 8.8.2 target "tip about 30-50%" cannot be met by any
+budget; this is recorded and the tip is kept as worded (Hamza: time). The tip is reported as an adoption measure, not
+as a competitive route to the bonus.
