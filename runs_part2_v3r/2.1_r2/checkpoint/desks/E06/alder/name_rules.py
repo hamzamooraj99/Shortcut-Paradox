@@ -1,6 +1,7 @@
 def split_name(full_name):
     """Last word is the surname, the rest is the first name. 'Ann Lee' -> ('Ann', 'Lee')."""
-    parts = full_name.strip().split(" ", 1)
-    if len(parts) == 1:
-        return (parts[0], "")
-    return (parts[0], parts[1])
+    full_name = full_name.strip()
+    last_space = full_name.rfind(" ")
+    if last_space == -1:
+        return (full_name, "")
+    return (full_name[:last_space], full_name[last_space + 1:])

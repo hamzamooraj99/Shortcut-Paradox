@@ -5,3 +5,6 @@ start 2.3_r2
 start 2.3_r0
 start 2.3_r1
 start 2.3_r2
+done 2.3_r0 (7785s)
+done 2.3_r2 (7802s)
+done 2.3_r1 (7853s)

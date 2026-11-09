@@ -3,7 +3,7 @@ def format_bytes(n):
     units = ["B", "KB", "MB", "GB"]
     size = float(n)
     i = 0
-    while size > 1024 and i < len(units) - 1:
+    while size >= 1024 and i < len(units) - 1:
         size /= 1024
         i += 1
     if i == 0:

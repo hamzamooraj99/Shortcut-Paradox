@@ -4,4 +4,6 @@ def priority_from_label(label):
         n = int(label[1:])
     except (ValueError, IndexError):
         return 3
-    return max(1, min(5, n))
+    if n < 1 or n > 5:
+        return 3
+    return n

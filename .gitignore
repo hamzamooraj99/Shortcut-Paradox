@@ -236,3 +236,4 @@ runs_part*.log
 !results_part1_v3r_w1/
 !runs_part1_v3r_*.log
 !runs_part2_v3r_*.log
+!results_part2_v3r/
