@@ -34,6 +34,6 @@ from matplotlib.lines import Line2D
 h.append(Line2D([], [], color=MUTED, lw=1, ls=":")); l.append("Planted cheaters leave (after day 3)")
 fig.legend(h, l, frameon=False, fontsize=9, loc="lower center", ncol=3)
 fig.tight_layout(rect=(0, 0.08, 1, 1))
-out = Path("paper/figure_1_strength.png")
+out = Path("results/figure_1_strength.png")
 fig.savefig(out, dpi=200)
 print("saved", out)
