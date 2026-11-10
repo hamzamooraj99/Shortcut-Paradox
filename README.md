@@ -10,7 +10,7 @@ This project began as **Fading Trails**. That name described the *mechanism* we 
 
 The runs did not go that way. The planted cheat (hard-code the customer's example) was never copied. Across 36 offices, employees who were not told to cheat made 0 cheats in 1,606 ticket closes. They tested both notes against the code, called the cheat note "misleading", and kept only its harmless half. Fading still worked on the board, but there was no spreading cheat for it to remove.
 
-The finding became the shortcut that was taken but not the cheat, so the paper and the repository are now named **The Shortcut Paradox**. Only the name changed: the design, pre-registration and data are the same.
+The finding became the shortcut that was taken but not the cheat, so the project and the repository are now named **The Shortcut Paradox**. Only the name changed: the design, pre-registration and data are the same.
 
 | | Before | Now |
 |---|---|---|
@@ -91,7 +91,7 @@ Setups run one at a time, with each setup's 5 repeats side by side. Re-running t
 
 ## Where the results are
 
-All study data is under [results/](results/); [results/README.md](results/README.md) says what each folder holds. The numbers behind the paper are in `results/summary.md` and the scored sheets in `results/part1/scored/` and `results/part2/scored/`. Rebuild the summary with `python scripts/summary_v3r.py`.
+All study data is under [results/](results/); [results/README.md](results/README.md) says what each folder holds. The headline numbers are in `results/summary.md` and the scored sheets in `results/part1/scored/` and `results/part2/scored/`. Rebuild the summary with `python scripts/summary_v3r.py`.
 
 ## Code map
 
@@ -116,4 +116,4 @@ The hackathon kicked off on Fri 6 Nov 2026, 6:30 PM PKT. All code in this reposi
 ## Licences
 
 - Code: [MIT](LICENSE)
-- Paper, figures and documentation: [CC BY 4.0](LICENSE-docs)
+- Figures and documentation: [CC BY 4.0](LICENSE-docs)
